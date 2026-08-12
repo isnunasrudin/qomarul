@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property string $code
  * @property string $name
- * @property string $group
+ * @property PositionGroup $group
  * @property bool $is_active
  *
  * @use HasFactory<PositionFactory>

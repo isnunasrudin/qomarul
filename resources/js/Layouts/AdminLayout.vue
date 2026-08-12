@@ -67,6 +67,10 @@ const menu = computed(() => {
     const role = auth.value.user?.role;
     const items = [{ label: 'Dasbor', href: '/' }];
 
+    if (role === 'foundation_head' || role === 'foundation_admin' || role === 'unit_admin') {
+        items.push({ label: 'Data GTK', href: '/admin/employees' });
+    }
+
     if (role === 'foundation_head' || role === 'foundation_admin') {
         items.push(
             { label: 'Satuan Kerja', href: '/admin/work-units' },

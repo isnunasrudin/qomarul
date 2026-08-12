@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| **Versi** | 1.7 |
+| **Versi** | 1.8 |
 | **Tanggal** | 12 Agustus 2026 |
-| **Status** | 22 keputusan kunci terkonfirmasi (§12); **F1 selesai** — eksekusi memakai **Laravel 13.25** (rilis terbaru saat mulai, bukan Laravel 11; tanpa perubahan arsitektur) |
+| **Status** | 22 keputusan kunci terkonfirmasi (§12); **F1 & F2 selesai** — eksekusi memakai **Laravel 13.25** (rilis terbaru saat mulai, bukan Laravel 11; tanpa perubahan arsitektur) |
 | **Bahasa** | Kode & basis data: Inggris · Antarmuka & dokumen: Indonesia (§6.1) |
 | **Pemilik Produk** | Bidang Personalia & SDM YPP Qomarul Hidayah |
 | **Stack** | Laravel 13 + Inertia.js + Vue 3 + Tailwind CSS + MySQL/MariaDB |
@@ -658,7 +658,7 @@ work_units ──1:N── users
 | Fase | Lingkup | Estimasi | Status |
 |---|---|---|---|
 | **F1 — Fondasi** | Skema DB, autentikasi, RBAC + tenancy, master data (satker, jabatan, jenis SK, ref tugas tambahan), pengaturan yayasan | 2 minggu | ✅ **selesai 12 Agu 2026** |
-| **F2 — Data GTK** | CRUD GTK, generator NIGY + format terkonfigurasi, riwayat pendidikan, unggah berkas & foto, indikator kelengkapan, impor/ekspor Excel, pencarian | 3 minggu | ⬜ |
+| **F2 — Data GTK** | CRUD GTK, generator NIGY + format terkonfigurasi, riwayat pendidikan, unggah berkas & foto, indikator kelengkapan, impor/ekspor Excel, pencarian | 3 minggu | ✅ **selesai 12 Agu 2026** |
 | **F2b — Portal GTK** | Akun massal GTK, beranda mandiri, sunting data pribadi, unggah berkas & arsip SK lama, antrean verifikasi arsip, tampilan ponsel | 1–2 minggu | ⬜ |
 | **F3 — Tugas Tambahan** | Penetapan berperiode, validasi irisan & kuota, riwayat, penetapan massal | 1 minggu | ⬜ |
 | **F4 — SK Tunggal** | Alur draft→ajukan→verifikasi→ttd, penomoran atomik, snapshot, generate PDF DomPDF, pratinjau draft | 2–3 minggu | ⬜ |

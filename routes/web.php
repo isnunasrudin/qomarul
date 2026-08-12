@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Admin\AdditionalDutyController;
 use App\Http\Controllers\Admin\DecreeTypeController;
+use App\Http\Controllers\Admin\DocumentController;
+use App\Http\Controllers\Admin\EducationController;
+use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmploymentStatusController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -48,6 +51,31 @@ Route::middleware('auth')->group(function () {
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
         });
+
+        // Data GTK — Ketua Yayasan (baca), Admin Yayasan, Admin Satker
+        Route::middleware('role:foundation_head,foundation_admin,unit_admin')->prefix('admin')->name('admin.')->group(function () {
+            Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
+            Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create');
+            Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
+            Route::post('employees/import/preview', [EmployeeController::class, 'importPreview'])->name('employees.import.preview');
+            Route::post('employees/import', [EmployeeController::class, 'importStore'])->name('employees.import');
+            Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
+            Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
+            Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+            Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+            Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+
+            Route::post('employees/{employee}/educations', [EducationController::class, 'store'])->name('employees.educations.store');
+            Route::put('employees/{employee}/educations/{education}', [EducationController::class, 'update'])->name('employees.educations.update');
+            Route::delete('employees/{employee}/educations/{education}', [EducationController::class, 'destroy'])->name('employees.educations.destroy');
+
+            Route::post('employees/{employee}/documents', [DocumentController::class, 'store'])->name('employees.documents.store');
+            Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+        });
+
+        Route::get('documents/{document}/download', [DocumentController::class, 'download'])
+            ->middleware(['role:foundation_head,foundation_admin,unit_admin', 'signed'])
+            ->name('admin.documents.download');
     });
 
     Route::get('/password/change', [PasswordChangeController::class, 'show'])->name('password.change');

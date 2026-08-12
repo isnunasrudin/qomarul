@@ -35,6 +35,8 @@ class Education extends Model
     /** @use HasFactory<EducationFactory> */
     use HasFactory;
 
+    protected $table = 'educations';
+
     protected $fillable = [
         'employee_id', 'level', 'institution', 'major', 'start_year', 'end_year',
         'certificate_number', 'certificate_date', 'gpa', 'is_highest',

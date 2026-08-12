@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property string $code
  * @property string $name
- * @property string $level
+ * @property WorkUnitLevel $level
  * @property string $npsn
  * @property string $address
  * @property string $head_name

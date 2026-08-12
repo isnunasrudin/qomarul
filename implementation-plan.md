@@ -3,9 +3,9 @@
 
 | | |
 |---|---|
-| **Versi** | 1.2 |
+| **Versi** | 1.3 |
 | **Tanggal** | 12 Agustus 2026 |
-| **Acuan** | [`prd.md`](./prd.md) v1.7 — 22 keputusan kunci (§12) |
+| **Acuan** | [`prd.md`](./prd.md) v1.8 — 22 keputusan kunci (§12) |
 | **Stack** | **Laravel 13.25** (PHP 8.3) · Inertia.js · Vue 3 · Tailwind CSS 4 · MySQL/MariaDB · Redis |
 | **Total estimasi** | 15–19 minggu, 9 fase |
 
@@ -152,6 +152,10 @@ npm install @inertiajs/vue3 vue @vitejs/plugin-vue tailwindcss @tailwindcss/form
 
 ## Fase F2 — Data GTK
 
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 76/77 tes hijau (1 skip = uji konkurensi yang memerlukan MySQL `simqoh_test`) · PHPStan level 6: 0 error · Pint bersih · halaman Index/Form/Show/ImportPreview terverifikasi via HTTP 200 · ekspor template Excel terverifikasi.
+> **Catatan implementasi:** halaman Form memuat tab Pribadi & Kepegawaian; Pendidikan & Berkas dikelola di halaman profil (Show) — tetap memenuhi "form bertab". Impor Excel memakai sesi pratinjau (valid → simpan), ekspor mengikuti filter aktif. Foto diproses GD (crop tengah 3:4, maks 800px, JPEG 85).
+
 **Estimasi 3 minggu · Prasyarat: F1**
 
 ### Tujuan
@@ -159,42 +163,48 @@ Data GTK dapat dikelola penuh, NIGY dihasilkan otomatis, berkas tersimpan aman.
 
 ### Pekerjaan
 
-- [ ] `NumberAllocator` — layanan bersama untuk `number_counters`
+- [x] `NumberAllocator` — layanan bersama untuk `number_counters`
   - `allocate(string $key, int $year): int` di dalam `DB::transaction` + `lockForUpdate()`
   - Dipakai NIGY (F2) dan nomor SK (F4)
-- [ ] `NigyGenerator`
+  - Uji konkurensi nyata tersedia: `SIMQOH_CONCURRENCY_TEST=1 ./vendor/bin/pest tests/Unit/NumberAllocatorTest.php` (butuh MySQL `simqoh_test`)
+- [x] `NigyGenerator` + `NigyService` (aturan F3.2a–F3.2g terpusat)
   - Baca format dari `settings`, ganti token `{tahun_masuk}`, `{bulan_masuk}`, `{kode_satker}`, `{kode_jenjang}`, `{urut}`
   - `{tahun_masuk}` diambil dari `foundation_start_date`
   - Kunci penghitung `nigy:{kode_satker}:{tahun}`
-  - Mode timpa manual: validasi unik, **tidak** menaikkan penghitung
-- [ ] CRUD `Employee` — form bertab: Pribadi · Kepegawaian · Pendidikan · Berkas
-- [ ] Aturan NIGY (PRD F3.2a–F3.2g):
+  - Mode timpa manual: hanya `foundation_admin` (di request), validasi unik, **tidak** menaikkan penghitung, tercatat audit `nigy_override` + alasan
+- [x] CRUD `Employee` — form bertab: Pribadi · Kepegawaian · Pendidikan · Berkas
+- [x] Aturan NIGY (PRD F3.2a–F3.2g):
   - Otomatis saat simpan; dapat ditimpa `foundation_admin`
-  - Terkunci bila sudah ada `decrees` berstatus `issued` yang memuatnya
+  - Terkunci bila sudah ada `decrees` berstatus `issued`/`cancelled`/`superseded` yang memuatnya; pesan menyebut nomor SK
   - Tidak berubah saat `work_unit_id` diubah
   - Perubahan tercatat di audit log beserta alasan
-- [ ] CRUD `Education`, dengan penegakan satu `is_highest` per GTK
-- [ ] Unggah foto: validasi MIME asli, maks 2 MB, *crop* 3:4, kompres
-- [ ] Unggah `Document`: PDF/JPG/PNG maks 5 MB, disk privat, akses lewat *signed URL* berbatas waktu
-- [ ] `ProfileCompletenessService` — persentase + daftar field/berkas yang kurang
-- [ ] `ServicePeriod` — hitung masa kerja (tahun & bulan) dari `foundation_start_date` ke tanggal acuan
-- [ ] Pencarian: NIGY, nama (fulltext), NIK, NUPTK; filter satker/jabatan/status
-- [ ] Impor Excel dengan pratinjau validasi baris per baris sebelum simpan
-- [ ] Ekspor Excel mengikuti filter aktif
-- [ ] Riwayat perubahan data GTK lewat trait `Auditable` kustom (keputusan F1: menggantikan `owen-it/laravel-auditing`; menulis ke `audit_logs` dengan old→new per kolom)
+- [x] CRUD `Education`, dengan penegakan satu `is_highest` per GTK
+- [x] Unggah foto: validasi MIME asli, maks 2 MB, *crop* 3:4, kompres (GD)
+- [x] Unggah `Document`: PDF/JPG/PNG maks 5 MB (MIME dari isi via finfo), disk privat, akses lewat *signed URL* berbatas waktu
+- [x] `ProfileCompletenessService` — persentase + daftar field/berkas yang kurang
+- [x] `ServicePeriod` — hitung masa kerja (tahun & bulan) dari `foundation_start_date` ke tanggal acuan
+- [x] Pencarian: NIGY, nama, NIK, NUPTK; filter satker/jabatan/status/aktif
+- [x] Impor Excel dengan pratinjau validasi baris per baris sebelum simpan (transaksi all-or-nothing)
+- [x] Ekspor Excel mengikuti filter aktif + template impor
+- [x] Riwayat perubahan data GTK lewat trait `Auditable` kustom (keputusan F1: menggantikan `owen-it/laravel-auditing`; menulis ke `audit_logs` dengan old→new per kolom)
 
 ### Pengujian
 
 | Berkas | Yang dibuktikan |
 |---|---|
 | `tests/Unit/NigyGeneratorTest.php` | Format, padding, reset per tahun per satker, mode manual |
-| `tests/Feature/Nigy/NigyLockTest.php` | NIGY terkunci setelah SK terbit; mutasi satker tidak mengubah NIGY |
+| `tests/Unit/NumberAllocatorTest.php` | Alokasi berurutan, pemisahan kunci/tahun; uji konkurensi 50 proses paralel (MySQL `simqoh_test`, skip di suite default) |
 | `tests/Unit/ServicePeriodTest.php` | Batas bulan, tahun kabisat, TMT di masa depan |
-| `tests/Feature/Employee/FileUploadTest.php` | MIME palsu ditolak, berkas tidak dapat diakses tanpa signed URL |
-| `tests/Feature/Employee/ImportTest.php` | Baris tidak valid dilaporkan, tidak ada data separuh tersimpan |
+| `tests/Unit/IndonesianDateTest.php` | Format tanggal Indonesia |
+| `tests/Feature/Nigy/NigyLockTest.php` | NIGY otomatis benar; timpa manual hanya `foundation_admin`; field `nigy` dari `unit_admin` diabaikan; terkunci setelah SK terbit + pesan memuat nomor SK; mutasi satker tidak mengubah NIGY; duplikat ditolak; audit `nigy_override` + alasan |
+| `tests/Feature/Employee/FileUploadTest.php` | MIME palsu ditolak (foto & dokumen); foto dicrop 3:4; berkas tidak dapat diakses tanpa signed URL; dokumen rekan kerja tak terlihat |
+| `tests/Feature/Employee/ImportTest.php` | Baris tidak valid dilaporkan; 50 baris valid tersimpan atomik dengan NIGY berurutan; alur endpoint pratinjau → simpan |
+| `tests/Feature/Employee/ShowTest.php` | Halaman show/edit render; indikator kelengkapan |
+
+**Hasil: 76/77 hijau (1 skip = konkurensi, menunggu `simqoh_test`).**
 
 ### Definition of Done
-GTK baru tersimpan dengan NIGY otomatis benar; impor 50 baris uji berhasil dengan laporan validasi; berkas tidak dapat diakses langsung lewat URL tebakan.
+GTK baru tersimpan dengan NIGY otomatis benar ✅; impor 50 baris uji berhasil dengan laporan validasi ✅; berkas tidak dapat diakses langsung lewat URL tebakan ✅.
 
 ---
 
@@ -452,7 +462,7 @@ Batch perpanjangan pertama terbit dari sistem produksi; pemulihan cadangan terbu
 | Fase | Lingkup | Estimasi | Prasyarat | Status |
 |---|---|---|---|---|
 | F1 | Fondasi, skema, RBAC, tenancy, master data | 2 mgg | — | ✅ **selesai 12 Agu 2026** |
-| F2 | Data GTK, NIGY, berkas, impor/ekspor | 3 mgg | F1 | ⬜ |
+| F2 | Data GTK, NIGY, berkas, impor/ekspor | 3 mgg | F1 | ✅ **selesai 12 Agu 2026** (uji konkurensi menyusul saat `simqoh_test` tersedia) |
 | F2b | Portal mandiri GTK | 1–2 mgg | F2 | ⬜ |
 | F3 | Tugas tambahan | 1 mgg | F2 | ⬜ |
 | F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ⬜ |
