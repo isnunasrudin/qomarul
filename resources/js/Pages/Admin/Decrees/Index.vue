@@ -5,33 +5,33 @@
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-800">Surat Keputusan</h2>
             <Link :href="route('admin.decrees.create')"
-                  class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                  class="btn-primary">
                 Buat SK
             </Link>
         </div>
 
-        <form class="mb-4 grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-6" @submit.prevent="applyFilters">
+        <form class="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6" @submit.prevent="applyFilters">
             <input v-model="filters.q" type="search" placeholder="Cari nomor SK, nama, NIGY..."
-                   class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 lg:col-span-2">
-            <select v-model="filters.work_unit_id" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                   class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 lg:col-span-2">
+            <select v-model="filters.work_unit_id" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option value="">Semua Satker</option>
                 <option v-for="unit in workUnits" :key="unit.id" :value="unit.id">{{ unit.code }} — {{ unit.name }}</option>
             </select>
-            <select v-model="filters.decree_type_id" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+            <select v-model="filters.decree_type_id" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option value="">Semua Jenis</option>
                 <option v-for="type in decreeTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
             </select>
-            <select v-model="filters.status" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+            <select v-model="filters.status" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option value="">Semua Status</option>
                 <option v-for="status in statuses" :key="status.value" :value="status.value">{{ status.label }}</option>
             </select>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">Cari</button>
-                <button type="button" @click="resetFilters" class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">Reset</button>
+                <button type="submit" class="flex-1 btn-primary">Cari</button>
+                <button type="button" @click="resetFilters" class="btn-secondary">Reset</button>
             </div>
         </form>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="table-wrap">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
@@ -58,11 +58,11 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <Link :href="route('admin.decrees.show', decree.id)" class="text-emerald-700 hover:underline">Buka</Link>
+                            <Link :href="route('admin.decrees.show', decree.id)" class="text-primary-600 hover:underline">Buka</Link>
                         </td>
                     </tr>
                     <tr v-if="!decrees.data.length">
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-400">Tidak ada SK</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada SK</td>
                     </tr>
                 </tbody>
             </table>
@@ -71,8 +71,8 @@
         <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
             <span>Halaman {{ decrees.current_page }} / {{ decrees.last_page }} · {{ decrees.total }} SK</span>
             <div v-if="decrees.last_page > 1" class="flex gap-2">
-                <button v-if="decrees.prev_page_url" type="button" @click="paginate(decrees.current_page - 1)" class="rounded border px-3 py-1 hover:bg-gray-100">←</button>
-                <button v-if="decrees.next_page_url" type="button" @click="paginate(decrees.current_page + 1)" class="rounded border px-3 py-1 hover:bg-gray-100">→</button>
+                <button v-if="decrees.prev_page_url" type="button" @click="paginate(decrees.current_page - 1)" class="btn-secondary px-3 py-1">←</button>
+                <button v-if="decrees.next_page_url" type="button" @click="paginate(decrees.current_page + 1)" class="btn-secondary px-3 py-1">→</button>
             </div>
         </div>
     </AdminLayout>

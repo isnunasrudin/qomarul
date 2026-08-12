@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <div class="rounded-lg bg-white p-5 shadow-sm">
+        <div class="card p-5">
             <h3 class="mb-2 text-sm font-semibold text-gray-700">Ringkasan Data Valid</h3>
             <p class="mb-4 text-sm text-gray-600">
                 NIGY akan dihasilkan otomatis sesuai format pada Pengaturan Yayasan.
@@ -48,16 +48,16 @@
         </div>
 
         <div class="mt-4 flex justify-between">
-            <Link :href="route('admin.employees.index')" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+            <Link :href="route('admin.employees.index')" class="btn-secondary">
                 Kembali
             </Link>
             <div v-if="preview.valid.length" class="flex gap-2">
                 <button type="button" @click="router.get(route('admin.employees.index'))"
-                        class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                        class="btn-secondary">
                     Batal
                 </button>
                 <button type="button" :disabled="importing"
-                        class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50"
+                        class="btn-primary disabled:opacity-50"
                         @click="confirmImport">
                     Simpan {{ preview.valid.length }} GTK
                 </button>

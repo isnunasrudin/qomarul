@@ -6,23 +6,18 @@ use App\Enums\DecreeStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\Decree;
-use App\Models\DecreeSignature;
 use App\Models\DecreeType;
 use App\Models\Employee;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\WorkUnit;
 use App\Notifications\DecreeStatusChanged;
-use App\Services\Decree\DecreeSnapshotBuilder;
+use App\Services\Decree\DecreeIssueService;
 use App\Services\Decree\DecreeWorkflowService;
 use App\Services\Decree\PdfRenderer;
-use App\Services\Signing\CertificateManager;
-use App\Services\Signing\SelfSignedPkcs12Signer;
-use App\Support\QrCodePng;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -191,72 +186,12 @@ class DecreeController extends Controller
             return back()->withErrors(['action' => $e->getMessage()])->withInput();
         }
 
-        // bekukan snapshot
-        $decree = app(DecreeSnapshotBuilder::class)->freeze($decree);
-
-        // QR verifikasi → data URI PNG
-        $verificationUrl = rtrim(config('app.url'), '/').'/verifikasi/'.$decree->uuid;
-        $qrDataUri = $this->qrDataUri($verificationUrl);
-
-        // render PDF (dengan QR, tanpa tanda tangan basah di pratinjau)
-        $pdf = app(PdfRenderer::class)->render($decree, qrDataUri: $qrDataUri);
-
-        // tanda tangan kriptografis
-        $certificate = app(CertificateManager::class)->activeCertificate();
-        $signer = app(SelfSignedPkcs12Signer::class);
-
-        if ($certificate) {
-            $pdf = $signer->sign($this->writeTempPdf($pdf), [
-                'p12_path' => Storage::disk('private')->path($certificate->p12_path),
-                'certificate_password' => Crypt::decryptString($certificate->password_encrypted),
-                'name' => Setting::get('foundation.chairman_name', ''),
-                'reason' => 'Pengesahan SK',
-                'location' => Setting::get('foundation.default_issued_place', 'Gondang'),
-            ]);
-        }
-
-        $hash = hash('sha256', $pdf);
-
-        $path = 'decrees/'.$decree->issued_date?->year.'/'.str_replace('/', '-', $decree->registration_number ?? $decree->uuid).'-'.$decree->employee->nigy.'.pdf';
-
-        Storage::disk('private')->put($path, $pdf);
-
-        $decree->update([
-            'pdf_path' => $path,
-            'pdf_hash' => $hash,
-        ]);
-
-        DecreeSignature::create([
-            'decree_id' => $decree->id,
-            'certificate_id' => $certificate?->id,
-            'signer_name' => Setting::get('foundation.chairman_name', ''),
-            'signed_at' => now(),
-            'hash_sha256' => $hash,
-            'signature_meta' => [
-                'reason' => 'Pengesahan SK',
-                'location' => Setting::get('foundation.default_issued_place', 'Gondang'),
-                'certificate_fingerprint' => $certificate?->fingerprint,
-                'qr_url' => $verificationUrl,
-            ],
-        ]);
+        $decree = app(DecreeIssueService::class)->issue($decree, $request->user());
 
         $this->notify($decree, 'issued', $decree->created_by, 'SK diterbitkan.');
         $this->notifyEmployee($decree);
 
         return back()->with('success', 'SK berhasil diterbitkan, ditandatangani digital, dan siap diverifikasi via QR.');
-    }
-
-    protected function qrDataUri(string $url): string
-    {
-        return QrCodePng::dataUri($url);
-    }
-
-    protected function writeTempPdf(string $pdf): string
-    {
-        $path = tempnam(sys_get_temp_dir(), 'sk-unsigned').'.pdf';
-        file_put_contents($path, $pdf);
-
-        return $path;
     }
 
     public function cancel(Request $request, Decree $decree): RedirectResponse

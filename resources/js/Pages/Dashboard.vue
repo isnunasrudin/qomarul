@@ -2,30 +2,71 @@
     <AdminLayout>
         <Head :title="t('common.dashboard')" />
 
-        <div v-if="employee" class="mb-6 rounded-lg bg-white p-6 shadow-sm">
-            <h2 class="text-xl font-semibold text-gray-800">{{ employee.name }}</h2>
-            <p class="mt-1 text-sm text-gray-500">
-                NIGY {{ employee.nigy }} · {{ employee.work_unit }} · {{ employee.position }}
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div v-for="card in cards" :key="card.label" class="rounded-lg bg-white p-5 shadow-sm">
-                <p class="text-sm text-gray-500">{{ card.label }}</p>
-                <p class="mt-1 text-2xl font-bold text-gray-800">{{ card.value }}</p>
+        <div v-if="employee" class="card mb-6 flex flex-wrap items-center justify-between gap-4 p-6">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-600/10 text-primary-600">
+                    <User :size="24" />
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-foreground">{{ employee.name }}</h2>
+                    <p class="text-sm text-slate-500">
+                        NIGY <span class="font-mono">{{ employee.nigy }}</span> · {{ employee.work_unit }} · {{ employee.position }}
+                    </p>
+                </div>
             </div>
         </div>
 
-        <div v-if="employeesByUnit.length" class="mt-6 rounded-lg bg-white p-6 shadow-sm">
-            <h3 class="mb-4 text-sm font-semibold text-gray-700">GTK Aktif per Satuan Kerja</h3>
-            <div class="space-y-3">
-                <div v-for="row in employeesByUnit" :key="row.label" class="flex items-center gap-3">
-                    <span class="w-56 truncate text-sm text-gray-600">{{ row.label }}</span>
-                    <div class="h-3 flex-1 rounded bg-gray-100">
-                        <div class="h-3 rounded bg-emerald-500"
-                             :style="{ width: `${maxTotal ? (row.total / maxTotal) * 100 : 0}%` }"></div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div v-for="card in cards" :key="card.label" class="card p-5">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <p class="text-[13px] font-medium text-slate-500">{{ card.label }}</p>
+                        <p class="mt-1.5 text-3xl font-semibold tracking-tight text-foreground">{{ card.value }}</p>
                     </div>
-                    <span class="w-10 text-right text-sm font-semibold">{{ row.total }}</span>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg" :class="card.tone">
+                        <component :is="card.icon" :size="20" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div v-if="employeesByUnit.length" class="card p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-foreground">GTK Aktif per Satuan Kerja</h3>
+                    <Users :size="16" class="text-slate-400" />
+                </div>
+                <div class="space-y-4">
+                    <div v-for="row in employeesByUnit" :key="row.label">
+                        <div class="mb-1.5 flex items-center justify-between text-sm">
+                            <span class="text-slate-600">{{ row.label }}</span>
+                            <span class="font-semibold text-foreground">{{ row.total }}</span>
+                        </div>
+                        <div class="h-2.5 overflow-hidden rounded-full bg-muted">
+                            <div class="h-full rounded-full bg-primary-600 transition-all duration-500"
+                                 :style="{ width: `${maxTotal ? (row.total / maxTotal) * 100 : 0}%` }"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="queueCards.length" class="card p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-foreground">Antrean Pekerjaan</h3>
+                    <Inbox :size="16" class="text-slate-400" />
+                </div>
+                <div class="space-y-3">
+                    <Link v-for="item in queueCards" :key="item.label" :href="item.href"
+                          class="flex items-center justify-between rounded-lg border border-border px-4 py-3 transition-colors hover:bg-muted/60">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-lg" :class="item.tone">
+                                <component :is="item.icon" :size="17" />
+                            </span>
+                            <span class="text-sm font-medium text-foreground">{{ item.label }}</span>
+                        </div>
+                        <span class="text-xl font-semibold text-foreground">{{ item.value }}</span>
+                    </Link>
+                    <p v-if="!queueCards.length" class="py-6 text-center text-sm text-slate-400">Tidak ada pekerjaan tertunda 🎉</p>
                 </div>
             </div>
         </div>
@@ -34,7 +75,8 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import { AlertCircle, Building2, CheckCircle2, ClipboardList, FileSignature, Inbox, Users, User } from 'lucide-vue-next';
 import AdminLayout from '../Layouts/AdminLayout.vue';
 import { useTranslation } from '../helpers/translation';
 
@@ -51,21 +93,44 @@ const props = defineProps({
 });
 
 const cards = computed(() => {
-    const items = [];
-
     if (props.employee) {
         return [];
     }
 
-    items.push({ label: 'Total GTK', value: props.totalEmployees ?? 0 });
-    items.push({ label: 'GTK Aktif', value: props.activeEmployees ?? 0 });
-    items.push({ label: 'Satuan Kerja Aktif', value: props.workUnitCount ?? 0 });
+    const items = [
+        { label: 'Total GTK', value: props.totalEmployees ?? 0, icon: Users, tone: 'bg-primary-50 text-primary-600' },
+        { label: 'GTK Aktif', value: props.activeEmployees ?? 0, icon: User, tone: 'bg-emerald-50 text-emerald-600' },
+        { label: 'Satuan Kerja Aktif', value: props.workUnitCount ?? 0, icon: Building2, tone: 'bg-amber-50 text-amber-600' },
+    ];
+
+    return items;
+});
+
+const queueCards = computed(() => {
+    if (props.employee) {
+        return [];
+    }
+
+    const items = [];
 
     if (props.pendingVerification !== undefined) {
-        items.push({ label: 'Menunggu Verifikasi', value: props.pendingVerification ?? 0 });
+        items.push({
+            label: 'SK menunggu verifikasi',
+            value: props.pendingVerification ?? 0,
+            href: '/admin/decrees?status=submitted',
+            icon: ClipboardList,
+            tone: 'bg-amber-50 text-amber-600',
+        });
     }
+
     if (props.pendingSignature !== undefined) {
-        items.push({ label: 'Menunggu Tanda Tangan', value: props.pendingSignature ?? 0 });
+        items.push({
+            label: 'SK menunggu tanda tangan',
+            value: props.pendingSignature ?? 0,
+            href: '/admin/decrees?status=verified',
+            icon: FileSignature,
+            tone: 'bg-blue-50 text-blue-600',
+        });
     }
 
     return items;

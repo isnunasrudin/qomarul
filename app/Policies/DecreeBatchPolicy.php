@@ -40,4 +40,16 @@ class DecreeBatchPolicy
         return $user->hasRole(UserRole::FoundationHead)
             && $batch->status->value === 'awaiting_signature';
     }
+
+    public function process(User $user, DecreeBatch $batch): bool
+    {
+        return $user->hasRole(UserRole::FoundationAdmin)
+            && $batch->status->value === 'preparing';
+    }
+
+    public function cancel(User $user, DecreeBatch $batch): bool
+    {
+        return $user->hasRole(UserRole::FoundationAdmin)
+            && in_array($batch->status->value, ['preparing', 'awaiting_signature'], true);
+    }
 }

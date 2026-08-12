@@ -71,6 +71,8 @@ class LoginController extends Controller
         Auth::login($user, (bool) $request->session()->pull('login.remember'));
         $request->session()->regenerate();
 
+        $user->update(['last_login_at' => now()]);
+
         if ($user->must_change_password) {
             return redirect()->route('password.change');
         }

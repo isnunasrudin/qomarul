@@ -9,7 +9,7 @@
             </p>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="table-wrap">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
@@ -29,17 +29,17 @@
                         <td class="px-4 py-3 text-gray-500">{{ decree.created_at }}</td>
                         <td class="px-4 py-3 text-right space-x-3">
                             <button type="button" @click="verify(decree)"
-                                    class="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800">
+                                    class="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
                                 Verifikasi
                             </button>
                             <button type="button" @click="reject(decree)"
-                                    class="rounded-md border border-red-300 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50">
+                                    class="btn-danger px-3 py-1.5 text-xs">
                                 Tolak
                             </button>
                         </td>
                     </tr>
                     <tr v-if="!decrees.data.length">
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-400">Tidak ada arsip menunggu verifikasi</td>
+                        <td colspan="4" class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada arsip menunggu verifikasi</td>
                     </tr>
                 </tbody>
             </table>
@@ -48,8 +48,8 @@
         <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
             <span>Halaman {{ decrees.current_page }} / {{ decrees.last_page }} · {{ decrees.total }} arsip</span>
             <div v-if="decrees.last_page > 1" class="flex gap-2">
-                <button v-if="decrees.prev_page_url" type="button" @click="paginate(decrees.current_page - 1)" class="rounded border px-3 py-1 hover:bg-gray-100">←</button>
-                <button v-if="decrees.next_page_url" type="button" @click="paginate(decrees.current_page + 1)" class="rounded border px-3 py-1 hover:bg-gray-100">→</button>
+                <button v-if="decrees.prev_page_url" type="button" @click="paginate(decrees.current_page - 1)" class="btn-secondary px-3 py-1">←</button>
+                <button v-if="decrees.next_page_url" type="button" @click="paginate(decrees.current_page + 1)" class="btn-secondary px-3 py-1">→</button>
             </div>
         </div>
     </AdminLayout>

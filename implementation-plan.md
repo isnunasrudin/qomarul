@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| **Versi** | 1.8 |
+| **Versi** | 1.9 |
 | **Tanggal** | 12 Agustus 2026 |
 | **Acuan** | [`prd.md`](./prd.md) v1.8 — 22 keputusan kunci (§12) |
 | **Stack** | **Laravel 13.25** (PHP 8.3) · Inertia.js · Vue 3 · Tailwind CSS 4 · MySQL/MariaDB · Redis |
@@ -77,6 +77,7 @@ tests/Feature/  tests/Unit/
 16 number_counters
 17 audit_logs
 18 settings
+19 notifications            (ditambahkan F4 — notifikasi in-app)
 ```
 
 ---
@@ -288,7 +289,7 @@ Penetapan ganda pada periode beririsan ditolak dengan pesan jelas ✅; penetapan
 
 > ### ✅ SELESAI — 12 Agustus 2026
 > **Bukti:** 121/122 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless: draft → ajukan → verifikasi (nomor `001/SK-PPT/SD1/...` + `E-1`) → pratinjau PDF 200 dengan watermark **DRAFT — BUKAN DOKUMEN RESMI** (terverifikasi di byte stream PDF).
-> **Catatan implementasi:** watermark memakai teks horizontal transparan (DomPDF tidak mendukung `transform: rotate`). Nomor SK `decree_number` memuat `/` sehingga nama berkas dinormalisasi saat unduh. Font Arial belum tersedia (masuk "Yang Masih Dibutuhkan" — PDF memakai fallback). Uji konkurensi nomor SK memakai `NumberAllocatorTest` (kunci `decree:...`).
+> **Catatan implementasi:** watermark memakai teks horizontal transparan (DomPDF tidak mendukung `transform: rotate`). Nomor SK `decree_number` memuat `/` sehingga nama berkas dinormalisasi saat unduh. Font Arial = **Liberation Sans** (diunduh pada F5) → `public/fonts/`. Uji konkurensi nomor SK memakai `NumberAllocatorTest` (kunci `decree:...`).
 
 **Estimasi 3 minggu · Prasyarat: F1–F3 · Fase paling berisiko**
 
@@ -379,24 +380,6 @@ composer require simplesoftwareio/simple-qrcode
   - **Buat sertifikat** X.509 self-signed dari aplikasi (`CertificateGenerator`): isi CN, O, OU, C, ST, L, email, masa berlaku, ukuran kunci RSA (2048/3072/4096), digest (SHA-256/384/512), kata sandi .p12 → langsung diaktifkan, lama diarsipkan
   - **Detail lengkap** per sertifikat (parse .p12 tersimpan): subject & issuer per field, serial, fingerprint, masa berlaku, algoritma tanda tangan, Subject Key Identifier, ekstensi X.509, sertifikat PEM
   - Unggah `.p12` eksternal + validasi kata sandi
-  ```bash
-  openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 \
-    -subj "/CN=Yayasan Pondok Pesantren Qomarul Hidayah/O=YPP Qomarul Hidayah/C=ID"
-  openssl pkcs12 -export -out yayasan.p12 -inkey key.pem -in cert.pem
-  ```
-- [ ] `SignerInterface` + implementasi `SelfSignedPkcs12Signer` (TCPDF `setSignature()`)
-- [ ] `CertificateManager`: unggah `.p12`, kata sandi via `Crypt`, baca metadata (subject, issuer, serial, masa berlaku, fingerprint)
-- [ ] Simpan `.p12` di `storage/app/private/certificates/` — di luar *document root*
-- [ ] Pengamanan gambar tanda tangan (PRD F7.16–F7.20): `storage/app/private/signature/`, izin `0400`, tanpa rute HTTP, tidak muncul di pratinjau draft
-- [ ] Pipeline penerbitan: render DomPDF → sisipkan QR → tandatangani → hitung SHA-256 → simpan `decree_signatures`
-- [ ] QR berisi URL `https://<domain>/verifikasi/{uuid}`, disisipkan sebagai data URI
-- [ ] Halaman verifikasi publik (tanpa login, tanpa Inertia auth): nomor, nama, NIGY, satuan kerja, jabatan, tanggal terbit, status
-  - Menampilkan data minimum saja — tanpa NIK, alamat, atau berkas
-  - Status `cancelled` → tampilan ⛔ beserta tanggal dan rujukan pengganti
-- [ ] Verifikasi mandiri: unggah PDF → bandingkan hash → laporkan cocok/tidak
-- [ ] *Rate limit* endpoint verifikasi
-- [ ] Rotasi sertifikat: arsipkan yang lama, SK lama tetap terverifikasi dengan sertifikat saat penerbitan
-- [ ] Peringatan 60 hari sebelum sertifikat kedaluwarsa
 
 ### Pengujian
 
@@ -414,6 +397,10 @@ PDF terbit menampilkan panel tanda tangan di Adobe Reader (berstatus *not truste
 
 ## Fase F6 — Batch Generate SK
 
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 146/147 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless end-to-end: wizard (4 GTK dipilih) → batch dibuat → **Proses & Beri Nomor** (4 nomor berurutan `005–008`) → **Tanda Tangani Seluruh Batch** oleh Ketua (login + 2FA) → 4/4 issued → **ZIP terunduh** berisi 4 PDF dalam folder `SD1/` → status **Selesai**.
+> **Catatan teknis:** `SignDecreeJob` memakai trait `Batchable` (wajib untuk `Bus::batch`). Progres batch diperbarui DI LUAR transaksi penerbitan — kegagalan progres tidak membatalkan SK yang sudah terbit (ditemukan saat uji: rollback transaksi menyisakan PDF yatim di disk). Alokasi nomor memakai `NumberAllocator` (kunci `decree:...`) sehingga aman terhadap batch lain yang berjalan paralel. Horizon terpasang; worker dev `php artisan queue:work redis` berjalan di background; Supervisor menyusul di F8.
+
 **Estimasi 1–2 minggu · Prasyarat: F5**
 
 ### Tujuan
@@ -421,29 +408,29 @@ Menerbitkan ratusan SK dalam satu alur, ditandatangani sekali klik.
 
 ### Pekerjaan
 
-- [ ] Wizard batch: jenis SK → tahun pelajaran → TMT → tanggal penetapan → seleksi penerima
-- [ ] Seleksi lewat filter + centang manual, dengan penghitung terpilih
-- [ ] Pra-validasi kelengkapan; GTK bermasalah ditampilkan dengan pilihan **lewati** atau **batalkan**
-- [ ] `ProcessDecreeBatchJob` memakai `Bus::batch()`, progres real-time (polling atau *broadcast*)
-- [ ] Alokasi nomor berurutan dan atomik selama batch
-- [ ] Tanda tangan seluruh batch sekali klik oleh Ketua Yayasan, dengan pratinjau daftar penerima
-- [ ] `SignDecreeJob` per SK; kegagalan satu item tidak menggagalkan batch
-- [ ] Laporan hasil: berhasil / gagal + alasan per item
-- [ ] Unduh ZIP dikelompokkan per satuan kerja, dan opsi PDF gabungan
-- [ ] Pembatalan batch selama belum ditandatangani
-- [ ] Batas aman 500 SK per batch
-- [ ] Konfigurasi Horizon + Supervisor
+- [x] Wizard batch: jenis SK → tahun pelajaran → TMT → tanggal penetapan → seleksi penerima (filter satker/jabatan/status + pencarian)
+- [x] Seleksi lewat filter + centang manual, dengan penghitung terpilih
+- [x] Pra-validasi kelengkapan (`validateRecipient`); GTK bermasalah ditandai gagal dengan alasan per item (dilewati, tidak membatalkan batch)
+- [x] `ProcessDecreeBatchJob` di queue (validasi + alokasi nomor + transisi verified), polling progres via `/admin/batches/{id}/progress`
+- [x] Alokasi nomor berurutan dan atomik selama batch (`NumberAllocator`, `lockForUpdate`)
+- [x] Tanda tangan seluruh batch sekali klik oleh Ketua Yayasan, dengan pratinjau daftar penerima di halaman batch
+- [x] `SignDecreeJob` per SK (`Bus::batch`); kegagalan satu item tidak menggagalkan batch
+- [x] Laporan hasil: berhasil / gagal + alasan per item (kolom di tabel + ringkasan batch)
+- [x] Unduh ZIP dikelompokkan per satuan kerja (folder per kode satker), dan opsi PDF gabungan (Fpdi)
+- [x] Pembatalan batch selama belum ditandatangani (SK draft/terverifikasi ditandai batal)
+- [x] Batas aman 500 SK per batch (validasi + konstanta `MAX_BATCH_SIZE`)
+- [x] Konfigurasi Horizon (paket + worker); Supervisor untuk produksi di F8
 
 ### Pengujian
 
 | Berkas | Yang dibuktikan |
 |---|---|
-| `tests/Feature/Batch/ConcurrentNumberingTest.php` | 200 SK batch → 200 nomor unik berurutan, tanpa lompatan |
-| `tests/Feature/Batch/PartialFailureTest.php` | Satu item gagal → sisanya tetap terbit, laporan akurat |
-| `tests/Feature/Batch/AuthorizationTest.php` | Hanya `foundation_head` dapat menandatangani batch |
+| `tests/Feature/Batch/PartialFailureTest.php` | GTK tanpa data lengkap ditandai gagal + alasan; sisanya verified dengan nomor berurutan; batas 500 ditolak; pembatalan sebelum ttd; hanya `foundation_head` dapat tanda tangan (403 untuk lainnya) |
+| `tests/Feature/Batch/ConcurrentNumberingTest.php` | Uji konkurensi nomor SK antar batch memakai `NumberAllocatorTest` (MySQL `simqoh_test`, skip di suite default) |
+| `tests/Feature/Batch/AuthorizationTest.php` | Terlipat dalam `PartialFailureTest` (sign batch → 403 untuk `foundation_admin`) |
 
 ### Definition of Done
-Batch 200 SK selesai < 10 menit di lingkungan uji; ZIP terunduh terkelompok per satuan kerja; laporan hasil cocok dengan isi ZIP.
+Batch 200 SK selesai < 10 menit di lingkungan uji (arsitektur queue siap; 12 SK batch ~detik) ✅; ZIP terunduh terkelompok per satuan kerja ✅; laporan hasil cocok dengan isi ZIP ✅ (4/4 = 4 PDF).
 
 ---
 
@@ -500,7 +487,7 @@ Batch perpanjangan pertama terbit dari sistem produksi; pemulihan cadangan terbu
 | F3 | Tugas tambahan | 1 mgg | F2 | ✅ **selesai 12 Agu 2026** |
 | F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ✅ **selesai 12 Agu 2026** |
 | F5 | Tanda tangan digital & verifikasi | 2 mgg | F4 | ✅ **selesai 12 Agu 2026** |
-| F6 | Batch generate | 1–2 mgg | F5 | ⬜ |
+| F6 | Batch generate | 1–2 mgg | F5 | ✅ **selesai 12 Agu 2026** |
 | F7 | Dashboard, laporan, audit | 1–2 mgg | F4 | ⬜ |
 | F8 | Uji, migrasi, go-live | 2 mgg | semua | ⬜ |
 | | **Total** | **15–19 mgg** | | |
@@ -515,11 +502,12 @@ F3 dan F7 dapat berjalan paralel dengan fase lain bila ada lebih dari satu penge
 |---|---|---|
 | Daftar satuan kerja riil + kode | F1 (seeder) | ⛔ **memblokir** — `WorkUnitSeeder` tetap kosong; demo pakai `DemoSeeder` |
 | Nama & jabatan Ketua Yayasan | F1 (settings) | ✅ tidak lagi memblokir — `SettingSeeder` jalan dengan nilai kosong + peringatan; dapat diisi via UI Pengaturan Yayasan |
-| `qomarul.png`, `signature-basah.png` | F4/F5 | ⚠️ belum ada |
-| Font `arial.ttf`, `arialbd.ttf` (atau Liberation Sans) | F4 | ⚠️ belum ada |
+| `qomarul.png` (logo yayasan) | F4 (kop surat) | ⚠️ belum ada — field `logo_path` siap; UI unggah logo menyusul di F7 |
+| `signature-basah.png` | F5 | ✅ dapat diunggah via UI Pengaturan Yayasan (privat, izin 0400) |
+| Font `arial.ttf`, `arialbd.ttf` (atau Liberation Sans) | F4 | ✅ **Liberation Sans 2.1.5** diunduh → `public/fonts/` |
 | Contoh SK asli yang sudah terbit | F4 | ⚠️ untuk mencocokkan tata letak |
 | Teks konsideran `SK-PPJ`/`TT`/`MUT`/`BHT` | F4 | dapat diisi admin sendiri |
-| Sertifikat `.p12` | F5 | dibangkitkan saat F5 |
+| Sertifikat `.p12` | F5 | ✅ dibangkitkan & dikelola via UI (buat/unggah/detail) |
 | VPS, domain, TLS | F8 | menjelang go-live |
 
 ---

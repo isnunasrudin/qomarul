@@ -3,12 +3,12 @@
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-800">{{ title }}</h2>
             <button type="button" @click="openCreate"
-                    class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                    class="btn-primary">
                 {{ t('common.create') }}
             </button>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="table-wrap">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
@@ -31,11 +31,11 @@
                         </td>
                         <td class="px-4 py-3 text-right">
                             <button type="button" @click="openEdit(item)"
-                                    class="text-emerald-700 hover:underline">{{ t('common.edit') }}</button>
+                                    class="text-primary-600 hover:underline">{{ t('common.edit') }}</button>
                         </td>
                     </tr>
                     <tr v-if="!items.data.length">
-                        <td :colspan="columns.length + 1" class="px-4 py-8 text-center text-gray-400">
+                        <td :colspan="columns.length + 1" class="px-4 py-10 text-center text-sm text-slate-400">
                             {{ t('common.none') }}
                         </td>
                     </tr>
@@ -48,43 +48,43 @@
                 {{ items.total }} {{ t('common.records') }}</span>
             <div v-if="items.last_page > 1" class="flex gap-2">
                 <button v-if="items.prev_page_url" type="button" @click="paginate(items.current_page - 1)"
-                        class="rounded border px-3 py-1 hover:bg-gray-100">←</button>
+                        class="btn-secondary px-3 py-1">←</button>
                 <button v-if="items.next_page_url" type="button" @click="paginate(items.current_page + 1)"
-                        class="rounded border px-3 py-1 hover:bg-gray-100">→</button>
+                        class="btn-secondary px-3 py-1">→</button>
             </div>
         </div>
 
         <div v-if="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="close">
-            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto card p-6">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">
                     {{ editingId ? t('common.edit') : t('common.create') }} — {{ title }}
                 </h3>
                 <form @submit.prevent="save" class="space-y-4">
                     <div v-for="field in fields" :key="field.key">
-                        <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                        <label class="label">{{ field.label }}</label>
                         <textarea v-if="field.type === 'textarea'" v-model="form[field.key]"
                                   rows="3"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
+                                  class="input"></textarea>
                         <select v-else-if="field.type === 'select'" v-model="form[field.key]"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                class="input">
                             <option v-if="field.placeholder !== false" value="">{{ field.placeholder ?? t('common.select') }}</option>
                             <option v-for="option in field.options" :key="option.value" :value="option.value">
                                 {{ option.label }}
                             </option>
                         </select>
                         <input v-else-if="field.type === 'checkbox'" v-model="form[field.key]" type="checkbox"
-                               class="mt-2 rounded border-gray-300 text-emerald-600">
+                               class="mt-2 rounded border-gray-300 text-primary-600">
                         <input v-else v-model="form[field.key]" :type="field.type ?? 'text'"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="form.errors[field.key]" class="mt-1 text-xs text-red-600">{{ form.errors[field.key] }}</p>
+                               class="input">
+                        <p v-if="form.errors[field.key]" class="error-text" role="alert">{{ form.errors[field.key] }}</p>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
                         <button type="button" @click="close"
-                                class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                                class="btn-secondary">
                             {{ t('common.cancel') }}
                         </button>
                         <button type="submit" :disabled="form.processing"
-                                class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50">
+                                class="btn-primary disabled:opacity-50">
                             {{ t('common.save') }}
                         </button>
                     </div>

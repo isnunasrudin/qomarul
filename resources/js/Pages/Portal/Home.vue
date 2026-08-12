@@ -11,10 +11,10 @@
             <div class="mt-4">
                 <div class="flex items-center justify-between text-sm">
                     <span class="font-medium text-gray-700">Kelengkapan Profil</span>
-                    <span class="font-semibold text-emerald-700">{{ completeness.percentage }}%</span>
+                    <span class="font-semibold text-primary-600">{{ completeness.percentage }}%</span>
                 </div>
                 <div class="mt-1 h-3 rounded-full bg-gray-100">
-                    <div class="h-3 rounded-full bg-emerald-500 transition-all" :style="{ width: `${completeness.percentage}%` }"></div>
+                    <div class="h-3 rounded-full bg-primary-500 transition-all" :style="{ width: `${completeness.percentage}%` }"></div>
                 </div>
                 <p v-if="completeness.missing.length" class="mt-2 text-xs text-gray-500">
                     Kurang: {{ completeness.missing.join(', ') }}
@@ -30,7 +30,7 @@
                         <p class="truncate text-sm text-gray-700">{{ decree.decree_number || 'SK (arsip)' }}</p>
                         <p class="text-xs text-gray-400">{{ decree.decree_type?.name }} · {{ decree.effective_date }}</p>
                     </div>
-                    <a v-if="!decree.is_legacy" :href="decree.download_url" target="_blank" rel="noopener" class="text-xs text-emerald-700 hover:underline">Unduh PDF</a>
+                    <a v-if="!decree.is_legacy" :href="decree.download_url" target="_blank" rel="noopener" class="text-xs text-primary-600 hover:underline">Unduh PDF</a>
                     <span v-else class="text-xs text-gray-400">Arsip</span>
                 </li>
             </ul>
@@ -51,26 +51,26 @@
                 <h2 class="mb-3 text-sm font-semibold text-gray-700">Data Pribadi</h2>
                 <form @submit.prevent="saveProfile" enctype="multipart/form-data" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div v-for="field in profileFields" :key="field.key">
-                        <label class="block text-xs font-medium text-gray-500">{{ field.label }}</label>
+                        <label class="label text-xs">{{ field.label }}</label>
                         <select v-if="field.type === 'select'" v-model="profileForm[field.key]"
-                                class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                class="input">
                             <option value="">{{ t('common.select') }}</option>
                             <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                         <textarea v-else-if="field.type === 'textarea'" v-model="profileForm[field.key]" rows="2"
-                                  class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
+                                  class="input"></textarea>
                         <input v-else v-model="profileForm[field.key]" :type="field.type ?? 'text'"
-                               class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="profileForm.errors[field.key]" class="mt-1 text-xs text-red-600">{{ profileForm.errors[field.key] }}</p>
+                               class="input">
+                        <p v-if="profileForm.errors[field.key]" class="error-text" role="alert">{{ profileForm.errors[field.key] }}</p>
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-gray-500">Pas Foto (JPG/PNG/WEBP, maks 2 MB, dipotong 3:4)</label>
+                        <label class="label text-xs">Pas Foto (JPG/PNG/WEBP, maks 2 MB, dipotong 3:4)</label>
                         <input type="file" accept="image/jpeg,image/png,image/webp" @change="(e) => { profileForm.photo = e.target.files[0]; }"
-                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p v-if="profileForm.errors.photo" class="mt-1 text-xs text-red-600">{{ profileForm.errors.photo }}</p>
+                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="profileForm.errors.photo" class="error-text" role="alert">{{ profileForm.errors.photo }}</p>
                     </div>
                     <button type="submit" :disabled="profileForm.processing"
-                            class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50 sm:col-span-2">
+                            class="btn-primary disabled:opacity-50 sm:col-span-2">
                         Simpan Data Pribadi
                     </button>
                 </form>
@@ -80,20 +80,20 @@
                 <h2 class="mb-3 text-sm font-semibold text-gray-700">Berkas Kepegawaian</h2>
                 <form @submit.prevent="uploadDocument" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Kategori</label>
+                        <label class="label text-xs">Kategori</label>
                         <select v-model="docForm.category"
-                                class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                class="input">
                             <option v-for="category in documentCategories" :key="category.value" :value="category.value">{{ category.label }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Berkas (PDF/JPG/PNG, maks 5 MB)</label>
+                        <label class="label text-xs">Berkas (PDF/JPG/PNG, maks 5 MB)</label>
                         <input type="file" accept="application/pdf,image/jpeg,image/png" @change="(e) => { docForm.file = e.target.files[0]; }"
-                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p v-if="docForm.errors.file" class="mt-1 text-xs text-red-600">{{ docForm.errors.file }}</p>
+                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="docForm.errors.file" class="error-text" role="alert">{{ docForm.errors.file }}</p>
                     </div>
                     <button type="submit" :disabled="docForm.processing"
-                            class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50 sm:col-span-2">
+                            class="btn-primary disabled:opacity-50 sm:col-span-2">
                         Unggah Berkas
                     </button>
                 </form>
@@ -103,9 +103,9 @@
                             <p class="truncate text-gray-700">{{ document.name }}</p>
                             <p class="text-xs text-gray-400">{{ categoryLabel(document.category) }}</p>
                         </div>
-                        <a :href="document.signed_url" target="_blank" class="text-emerald-700 hover:underline">Unduh</a>
+                        <a :href="document.signed_url" target="_blank" class="text-primary-600 hover:underline">Unduh</a>
                     </li>
-                    <li v-if="!employee.documents.length" class="py-2 text-center text-xs text-gray-400">Belum ada berkas</li>
+                    <li v-if="!employee.documents.length" class="py-4 text-center text-sm text-slate-400">Belum ada berkas</li>
                 </ul>
             </section>
 
@@ -116,22 +116,22 @@
                 </p>
                 <form @submit.prevent="uploadLegacy" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Berkas PDF (maks 5 MB)</label>
+                        <label class="label text-xs">Berkas PDF (maks 5 MB)</label>
                         <input type="file" accept="application/pdf" @change="(e) => { legacyForm.file = e.target.files[0]; }"
-                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p v-if="legacyForm.errors.file" class="mt-1 text-xs text-red-600">{{ legacyForm.errors.file }}</p>
+                               class="mt-0.5 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="legacyForm.errors.file" class="error-text" role="alert">{{ legacyForm.errors.file }}</p>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Nomor SK (opsional)</label>
-                        <input v-model="legacyForm.decree_number" type="text" class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <label class="label text-xs">Nomor SK (opsional)</label>
+                        <input v-model="legacyForm.decree_number" type="text" class="input">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Tanggal Penetapan (opsional)</label>
-                        <input v-model="legacyForm.issued_date" type="date" class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <label class="label text-xs">Tanggal Penetapan (opsional)</label>
+                        <input v-model="legacyForm.issued_date" type="date" class="input">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500">Tahun Pelajaran (opsional)</label>
-                        <input v-model="legacyForm.academic_year" type="text" placeholder="2025/2026" class="mt-0.5 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <label class="label text-xs">Tahun Pelajaran (opsional)</label>
+                        <input v-model="legacyForm.academic_year" type="text" placeholder="2025/2026" class="input">
                     </div>
                     <button type="submit" :disabled="legacyForm.processing"
                             class="rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 sm:col-span-2">

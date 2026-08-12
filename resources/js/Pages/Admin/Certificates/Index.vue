@@ -11,17 +11,17 @@
             </div>
             <div class="flex gap-2">
                 <button type="button" @click="openGenerate"
-                        class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                        class="btn-primary">
                     Buat Sertifikat
                 </button>
                 <button type="button" @click="openUpload"
-                        class="rounded-md border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50">
+                        class="rounded-md border border-primary-200 px-3 py-2 text-sm text-primary-600 hover:bg-primary-50">
                     Unggah .p12
                 </button>
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="table-wrap">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
@@ -52,11 +52,11 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <button type="button" @click="showDetail(certificate)" class="text-emerald-700 hover:underline">Lihat Detail</button>
+                            <button type="button" @click="showDetail(certificate)" class="text-primary-600 hover:underline">Lihat Detail</button>
                         </td>
                     </tr>
                     <tr v-if="!certificates.length">
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                        <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-400">
                             Belum ada sertifikat. Buat sertifikat baru atau unggah .p12.
                         </td>
                     </tr>
@@ -66,77 +66,77 @@
 
         <!-- Modal Buat Sertifikat -->
         <div v-if="modal === 'generate'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="modal = null">
-            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto card p-6">
                 <h3 class="mb-1 text-base font-semibold text-gray-800">Buat Sertifikat X.509 (Self-Signed)</h3>
                 <p class="mb-4 text-xs text-gray-500">Pasangan kunci RSA digenerate di server, diekspor sebagai .p12, dan langsung diaktifkan.</p>
                 <form @submit.prevent="submitGenerate" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Nama Sertifikat *</label>
+                        <label class="label">Nama Sertifikat *</label>
                         <input v-model="genForm.name" type="text" placeholder="mis. yayasan-2027"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="genForm.errors.name" class="mt-1 text-xs text-red-600">{{ genForm.errors.name }}</p>
+                               class="input">
+                        <p v-if="genForm.errors.name" class="error-text" role="alert">{{ genForm.errors.name }}</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Common Name (CN) *</label>
+                            <label class="label">Common Name (CN) *</label>
                             <input v-model="genForm.common_name" type="text" placeholder="Yayasan Pondok Pesantren Qomarul Hidayah"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <p v-if="genForm.errors.common_name" class="mt-1 text-xs text-red-600">{{ genForm.errors.common_name }}</p>
+                                   class="input">
+                            <p v-if="genForm.errors.common_name" class="error-text" role="alert">{{ genForm.errors.common_name }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Organisasi (O)</label>
+                            <label class="label">Organisasi (O)</label>
                             <input v-model="genForm.organization" type="text" placeholder="YPP Qomarul Hidayah"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Unit Organisasi (OU)</label>
+                            <label class="label">Unit Organisasi (OU)</label>
                             <input v-model="genForm.organizational_unit" type="text" placeholder="Bidang Personalia & SDM"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Negara (C, 2 huruf)</label>
+                            <label class="label">Negara (C, 2 huruf)</label>
                             <input v-model="genForm.country" type="text" maxlength="2" placeholder="ID"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <p v-if="genForm.errors.country" class="mt-1 text-xs text-red-600">{{ genForm.errors.country }}</p>
+                                   class="input">
+                            <p v-if="genForm.errors.country" class="error-text" role="alert">{{ genForm.errors.country }}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Provinsi (ST)</label>
+                            <label class="label">Provinsi (ST)</label>
                             <input v-model="genForm.state" type="text" placeholder="Jawa Timur"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Kota (L)</label>
+                            <label class="label">Kota (L)</label>
                             <input v-model="genForm.locality" type="text" placeholder="Trenggalek"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <label class="label">Email</label>
                         <input v-model="genForm.email" type="email" placeholder="admin@qomarulhidayah.sch.id"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="genForm.errors.email" class="mt-1 text-xs text-red-600">{{ genForm.errors.email }}</p>
+                               class="input">
+                        <p v-if="genForm.errors.email" class="error-text" role="alert">{{ genForm.errors.email }}</p>
                     </div>
                     <div class="grid grid-cols-3 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Masa Berlaku (hari)</label>
+                            <label class="label">Masa Berlaku (hari)</label>
                             <input v-model="genForm.days" type="number" min="1"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Kunci (bit)</label>
-                            <select v-model="genForm.key_bits" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Kunci (bit)</label>
+                            <select v-model="genForm.key_bits" class="input">
                                 <option value="2048">2048</option>
                                 <option value="3072">3072</option>
                                 <option value="4096">4096</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Digest</label>
-                            <select v-model="genForm.digest" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Digest</label>
+                            <select v-model="genForm.digest" class="input">
                                 <option value="sha256">SHA-256</option>
                                 <option value="sha384">SHA-384</option>
                                 <option value="sha512">SHA-512</option>
@@ -144,14 +144,14 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Kata Sandi .p12 * (min. 4 karakter)</label>
+                        <label class="label">Kata Sandi .p12 * (min. 4 karakter)</label>
                         <input v-model="genForm.password" type="password" autocomplete="new-password"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="genForm.errors.password" class="mt-1 text-xs text-red-600">{{ genForm.errors.password }}</p>
+                               class="input">
+                        <p v-if="genForm.errors.password" class="error-text" role="alert">{{ genForm.errors.password }}</p>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-                        <button type="submit" :disabled="genForm.processing" class="rounded-md bg-emerald-700 px-4 py-2 text-sm text-white hover:bg-emerald-800 disabled:opacity-50">
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="genForm.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">
                             Generate & Aktifkan
                         </button>
                     </div>
@@ -161,30 +161,30 @@
 
         <!-- Modal Unggah .p12 -->
         <div v-if="modal === 'upload'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="modal = null">
-            <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div class="w-full max-w-md card p-6">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">Unggah Sertifikat .p12</h3>
                 <form @submit.prevent="submitUpload" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Nama Sertifikat</label>
+                        <label class="label">Nama Sertifikat</label>
                         <input v-model="form.name" type="text" placeholder="mis. yayasan-2026"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
+                               class="input">
+                        <p v-if="form.errors.name" class="error-text" role="alert">{{ form.errors.name }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Kata Sandi .p12</label>
+                        <label class="label">Kata Sandi .p12</label>
                         <input v-model="form.password" type="password" autocomplete="new-password"
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                        <p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p>
+                               class="input">
+                        <p v-if="form.errors.password" class="error-text" role="alert">{{ form.errors.password }}</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Berkas .p12 (maks 4 MB)</label>
+                        <label class="label">Berkas .p12 (maks 4 MB)</label>
                         <input type="file" accept=".p12" @change="(e) => { form.file = e.target.files[0]; }"
-                               class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-emerald-700 hover:file:bg-emerald-100">
-                        <p v-if="form.errors.file" class="mt-1 text-xs text-red-600">{{ form.errors.file }}</p>
+                               class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="form.errors.file" class="error-text" role="alert">{{ form.errors.file }}</p>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-                        <button type="submit" :disabled="form.processing" class="rounded-md bg-emerald-700 px-4 py-2 text-sm text-white hover:bg-emerald-800 disabled:opacity-50">Simpan</button>
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="form.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -192,7 +192,7 @@
 
         <!-- Modal Detail -->
         <div v-if="modal === 'detail'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="modal = null">
-            <div class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div class="max-h-[90vh] w-full max-w-2xl overflow-y-auto card p-6">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">Detail Sertifikat — {{ detail?.name }}</h3>
 
                 <p v-if="detail?.error" class="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ detail.error }}</p>
@@ -254,7 +254,7 @@
                 </template>
 
                 <div class="mt-4 flex justify-end">
-                    <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Tutup</button>
+                    <button type="button" @click="modal = null" class="btn-secondary">Tutup</button>
                 </div>
             </div>
         </div>

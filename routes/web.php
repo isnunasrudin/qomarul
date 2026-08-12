@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdditionalDutyController;
+use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\DecreeController;
 use App\Http\Controllers\Admin\DecreeTypeController;
@@ -113,6 +114,17 @@ Route::middleware('auth')->group(function () {
             Route::post('decrees/{decree}/reject', [DecreeController::class, 'reject'])->name('decrees.reject');
             Route::post('decrees/{decree}/issue', [DecreeController::class, 'issue'])->name('decrees.issue');
             Route::post('decrees/{decree}/cancel', [DecreeController::class, 'cancel'])->name('decrees.cancel');
+
+            Route::get('batches', [BatchController::class, 'index'])->name('batches.index');
+            Route::get('batches/create', [BatchController::class, 'create'])->name('batches.create');
+            Route::post('batches', [BatchController::class, 'store'])->name('batches.store');
+            Route::get('batches/{batch}', [BatchController::class, 'show'])->name('batches.show');
+            Route::get('batches/{batch}/progress', [BatchController::class, 'progress'])->name('batches.progress');
+            Route::post('batches/{batch}/process', [BatchController::class, 'process'])->name('batches.process');
+            Route::post('batches/{batch}/sign', [BatchController::class, 'sign'])->name('batches.sign');
+            Route::post('batches/{batch}/cancel', [BatchController::class, 'cancel'])->name('batches.cancel');
+            Route::get('batches/{batch}/download-zip', [BatchController::class, 'downloadZip'])->name('batches.download-zip');
+            Route::get('batches/{batch}/download-combined', [BatchController::class, 'downloadCombined'])->name('batches.download-combined');
         });
 
         Route::get('decrees/{decree}/download', [DecreeController::class, 'downloadPdf'])

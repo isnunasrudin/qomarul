@@ -14,19 +14,19 @@
                     {{ showNigyField ? 'Sembunyikan NIGY' : 'Ubah NIGY' }}
                 </button>
                 <button type="button" @click="confirmDelete"
-                        class="rounded-md border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40"
+                        class="btn-danger disabled:opacity-40"
                         :disabled="!can.delete">
                     Hapus
                 </button>
             </div>
         </div>
 
-        <form @submit.prevent="submit" enctype="multipart/form-data" class="rounded-lg bg-white shadow-sm">
+        <form @submit.prevent="submit" enctype="multipart/form-data" class="card">
             <div class="border-b border-gray-200">
                 <nav class="flex gap-1 px-4 pt-3">
                     <button v-for="tab in tabs" :key="tab.key" type="button" @click="activeTab = tab.key"
                             class="rounded-t-md px-4 py-2 text-sm font-medium"
-                            :class="activeTab === tab.key ? 'bg-emerald-50 text-emerald-800' : 'text-gray-500 hover:text-gray-700'">
+                            :class="activeTab === tab.key ? 'bg-primary-50 text-primary-700' : 'text-gray-500 hover:text-gray-700'">
                         {{ tab.label }}
                     </button>
                 </nav>
@@ -34,71 +34,71 @@
 
             <div v-if="activeTab === 'pribadi'" class="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div v-for="field in personalFields" :key="field.key" :class="{ 'sm:col-span-2 lg:col-span-3': field.full }">
-                    <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                    <label class="label">{{ field.label }}</label>
                     <select v-if="field.type === 'select'" v-model="form[field.key]"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            class="input">
                         <option value="">{{ t('common.select') }}</option>
                         <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                     <textarea v-else-if="field.type === 'textarea'" v-model="form[field.key]" rows="2"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
+                              class="input"></textarea>
                     <input v-else v-model="form[field.key]" :type="field.type ?? 'text'"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p v-if="form.errors[field.key]" class="mt-1 text-xs text-red-600">{{ form.errors[field.key] }}</p>
+                           class="input">
+                    <p v-if="form.errors[field.key]" class="error-text" role="alert">{{ form.errors[field.key] }}</p>
                 </div>
                 <div class="sm:col-span-2 lg:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700">Pas Foto (JPG/PNG/WEBP, maks 2 MB, otomatis dipotong 3:4)</label>
+                    <label class="label">Pas Foto (JPG/PNG/WEBP, maks 2 MB, otomatis dipotong 3:4)</label>
                     <input type="file" accept="image/jpeg,image/png,image/webp" @change="(e) => { form.photo = e.target.files[0]; }"
-                           class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-emerald-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-emerald-700 hover:file:bg-emerald-100">
-                    <p v-if="form.errors.photo" class="mt-1 text-xs text-red-600">{{ form.errors.photo }}</p>
+                           class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                    <p v-if="form.errors.photo" class="error-text" role="alert">{{ form.errors.photo }}</p>
                 </div>
             </div>
 
             <div v-if="activeTab === 'kepegawaian'" class="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
                 <div v-if="isEdit" class="sm:col-span-2 lg:col-span-3 rounded-md bg-gray-50 p-3">
-                    <label class="block text-sm font-medium text-gray-700">NIGY</label>
+                    <label class="label">NIGY</label>
                     <p class="mt-1 font-mono text-base font-semibold text-gray-800">
                         {{ form.nigy }}
                         <span v-if="nigyLocked" class="ml-2 text-xs font-normal text-red-600">terkunci — sudah tercetak pada SK terbit</span>
                     </p>
                     <div v-if="showNigyField && can.updateNigy" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-medium text-gray-500">NIGY baru (timpa manual)</label>
+                            <label class="label text-xs">NIGY baru (timpa manual)</label>
                             <input v-model="form.nigy" type="text"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <p v-if="form.errors.nigy" class="mt-1 text-xs text-red-600">{{ form.errors.nigy }}</p>
+                                   class="input">
+                            <p v-if="form.errors.nigy" class="error-text" role="alert">{{ form.errors.nigy }}</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-500">Alasan perubahan</label>
+                            <label class="label text-xs">Alasan perubahan</label>
                             <input v-model="form.nigy_reason" type="text"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                                   class="input">
                         </div>
                     </div>
                 </div>
                 <div v-for="field in employmentFields" :key="field.key" :class="{ 'sm:col-span-2 lg:col-span-3': field.full }">
-                    <label class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                    <label class="label">{{ field.label }}</label>
                     <select v-if="field.type === 'select'" v-model="form[field.key]"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            class="input">
                         <option v-if="field.placeholder !== false" value="">{{ field.placeholder ?? t('common.select') }}</option>
                         <option v-for="option in field.options" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                     <input v-else v-model="form[field.key]" :type="field.type ?? 'text'"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                    <p v-if="form.errors[field.key]" class="mt-1 text-xs text-red-600">{{ form.errors[field.key] }}</p>
+                           class="input">
+                    <p v-if="form.errors[field.key]" class="error-text" role="alert">{{ form.errors[field.key] }}</p>
                 </div>
             </div>
 
             <div v-if="activeTab === 'pendidikan' || activeTab === 'berkas'" class="p-6 text-center text-sm text-gray-500">
                 <p class="mb-2">{{ activeTab === 'pendidikan' ? 'Pendidikan' : 'Berkas' }} dikelola di halaman profil GTK.</p>
-                <Link v-if="isEdit" :href="route('admin.employees.show', employee.id)" class="text-emerald-700 hover:underline">
+                <Link v-if="isEdit" :href="route('admin.employees.show', employee.id)" class="text-primary-600 hover:underline">
                     Buka halaman {{ employee.name }} →
                 </Link>
             </div>
 
             <div class="flex items-center justify-between border-t border-gray-100 px-6 py-4">
-                <button type="button" @click="back" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Kembali</button>
+                <button type="button" @click="back" class="btn-secondary">Kembali</button>
                 <button type="submit" :disabled="form.processing"
-                        class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-50">
+                        class="btn-primary disabled:opacity-50">
                     {{ isEdit ? 'Simpan Perubahan' : 'Simpan' }}
                 </button>
             </div>

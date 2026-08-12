@@ -6,32 +6,32 @@
             <h2 class="text-lg font-semibold text-gray-800">Penetapan Tugas Tambahan</h2>
             <div class="flex gap-2">
                 <button type="button" @click="openMass"
-                        class="rounded-md border border-emerald-300 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50">
+                        class="rounded-md border border-primary-200 px-3 py-2 text-sm text-primary-600 hover:bg-primary-50">
                     Penetapan Massal
                 </button>
                 <button type="button" @click="openSingle(null)"
-                        class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                        class="btn-primary">
                     Tetapkan Tugas
                 </button>
             </div>
         </div>
 
-        <form class="mb-4 grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow-sm sm:grid-cols-3" @submit.prevent="applyFilters">
-            <select v-model="filters.work_unit_id" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+        <form class="card mb-4 grid grid-cols-1 gap-3 p-4 sm:grid-cols-3" @submit.prevent="applyFilters">
+            <select v-model="filters.work_unit_id" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option value="">Semua Satuan Kerja</option>
                 <option v-for="unit in workUnits" :key="unit.id" :value="unit.id">{{ unit.code }} — {{ unit.name }}</option>
             </select>
-            <select v-model="filters.academic_year" class="rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+            <select v-model="filters.academic_year" class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
                 <option value="">Semua Tahun Pelajaran</option>
                 <option v-for="year in academicYears" :key="year" :value="year">{{ year }}</option>
             </select>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">Cari</button>
-                <button type="button" @click="resetFilters" class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">Reset</button>
+                <button type="submit" class="flex-1 btn-primary">Cari</button>
+                <button type="button" @click="resetFilters" class="btn-secondary">Reset</button>
             </div>
         </form>
 
-        <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+        <div class="table-wrap">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50">
                     <tr>
@@ -60,12 +60,12 @@
                         </td>
                         <td class="px-4 py-3 text-gray-600">{{ assignment.academic_year }}</td>
                         <td class="px-4 py-3 text-right space-x-3">
-                            <button type="button" class="text-emerald-700 hover:underline" @click="openSingle(assignment)">Sunting</button>
+                            <button type="button" class="text-primary-600 hover:underline" @click="openSingle(assignment)">Sunting</button>
                             <button type="button" class="text-red-600 hover:underline" @click="remove(assignment)">Hapus</button>
                         </td>
                     </tr>
                     <tr v-if="!assignments.data.length">
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-400">Tidak ada penetapan</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-400">Tidak ada penetapan</td>
                     </tr>
                 </tbody>
             </table>
@@ -74,83 +74,83 @@
         <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
             <span>Halaman {{ assignments.current_page }} / {{ assignments.last_page }} · {{ assignments.total }} penetapan</span>
             <div v-if="assignments.last_page > 1" class="flex gap-2">
-                <button v-if="assignments.prev_page_url" type="button" @click="paginate(assignments.current_page - 1)" class="rounded border px-3 py-1 hover:bg-gray-100">←</button>
-                <button v-if="assignments.next_page_url" type="button" @click="paginate(assignments.current_page + 1)" class="rounded border px-3 py-1 hover:bg-gray-100">→</button>
+                <button v-if="assignments.prev_page_url" type="button" @click="paginate(assignments.current_page - 1)" class="btn-secondary px-3 py-1">←</button>
+                <button v-if="assignments.next_page_url" type="button" @click="paginate(assignments.current_page + 1)" class="btn-secondary px-3 py-1">→</button>
             </div>
         </div>
 
         <div v-if="modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="modal = null">
-            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto card p-6">
                 <h3 class="mb-4 text-base font-semibold text-gray-800">{{ modal.title }}</h3>
 
                 <form v-if="modal.kind === 'single'" @submit.prevent="saveSingle" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">GTK</label>
-                        <select v-model="form.employee_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                        <label class="label">GTK</label>
+                        <select v-model="form.employee_id" class="input">
                             <option value="">Pilih GTK</option>
                             <option v-for="employee in employees" :key="employee.id" :value="employee.id">{{ employee.nigy }} — {{ employee.name }}</option>
                         </select>
-                        <p v-if="form.errors.employee_id" class="mt-1 text-xs text-red-600">{{ form.errors.employee_id }}</p>
+                        <p v-if="form.errors.employee_id" class="error-text" role="alert">{{ form.errors.employee_id }}</p>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Tugas Tambahan</label>
-                            <select v-model="form.additional_duty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Tugas Tambahan</label>
+                            <select v-model="form.additional_duty_id" class="input">
                                 <option value="">Pilih Tugas</option>
                                 <option v-for="duty in duties" :key="duty.id" :value="duty.id">{{ duty.name }}</option>
                             </select>
-                            <p v-if="form.errors.additional_duty_id" class="mt-1 text-xs text-red-600">{{ form.errors.additional_duty_id }}</p>
+                            <p v-if="form.errors.additional_duty_id" class="error-text" role="alert">{{ form.errors.additional_duty_id }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Satuan Kerja</label>
-                            <select v-model="form.work_unit_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Satuan Kerja</label>
+                            <select v-model="form.work_unit_id" class="input">
                                 <option value="">Pilih Satker</option>
                                 <option v-for="unit in workUnits" :key="unit.id" :value="unit.id">{{ unit.code }} — {{ unit.name }}</option>
                             </select>
-                            <p v-if="form.errors.work_unit_id" class="mt-1 text-xs text-red-600">{{ form.errors.work_unit_id }}</p>
+                            <p v-if="form.errors.work_unit_id" class="error-text" role="alert">{{ form.errors.work_unit_id }}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Tahun Pelajaran</label>
-                            <input v-model="form.academic_year" type="text" placeholder="2026/2027" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Tahun Pelajaran</label>
+                            <input v-model="form.academic_year" type="text" placeholder="2026/2027" class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Keterangan</label>
-                            <input v-model="form.notes" type="text" placeholder="mis. Wali Kelas VII-A" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Keterangan</label>
+                            <input v-model="form.notes" type="text" placeholder="mis. Wali Kelas VII-A" class="input">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">TMT Mulai</label>
-                            <input v-model="form.start_date" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <p v-if="form.errors.start_date" class="mt-1 text-xs text-red-600">{{ form.errors.start_date }}</p>
+                            <label class="label">TMT Mulai</label>
+                            <input v-model="form.start_date" type="date" class="input">
+                            <p v-if="form.errors.start_date" class="error-text" role="alert">{{ form.errors.start_date }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">TMT Selesai</label>
-                            <input v-model="form.end_date" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                            <p v-if="form.errors.end_date" class="mt-1 text-xs text-red-600">{{ form.errors.end_date }}</p>
+                            <label class="label">TMT Selesai</label>
+                            <input v-model="form.end_date" type="date" class="input">
+                            <p v-if="form.errors.end_date" class="error-text" role="alert">{{ form.errors.end_date }}</p>
                         </div>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-                        <button type="submit" :disabled="form.processing" class="rounded-md bg-emerald-700 px-4 py-2 text-sm text-white hover:bg-emerald-800 disabled:opacity-50">Simpan</button>
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="form.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">Simpan</button>
                     </div>
                 </form>
 
                 <form v-else-if="modal.kind === 'mass'" @submit.prevent="saveMass" class="space-y-4">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Tugas Tambahan</label>
-                            <select v-model="massForm.additional_duty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Tugas Tambahan</label>
+                            <select v-model="massForm.additional_duty_id" class="input">
                                 <option value="">Pilih Tugas</option>
                                 <option v-for="duty in duties" :key="duty.id" :value="duty.id">{{ duty.name }}</option>
                             </select>
-                            <p v-if="massForm.errors.additional_duty_id" class="mt-1 text-xs text-red-600">{{ massForm.errors.additional_duty_id }}</p>
+                            <p v-if="massForm.errors.additional_duty_id" class="error-text" role="alert">{{ massForm.errors.additional_duty_id }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Satuan Kerja</label>
-                            <select v-model="massForm.work_unit_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Satuan Kerja</label>
+                            <select v-model="massForm.work_unit_id" class="input">
                                 <option value="">Pilih Satker</option>
                                 <option v-for="unit in workUnits" :key="unit.id" :value="unit.id">{{ unit.code }} — {{ unit.name }}</option>
                             </select>
@@ -158,37 +158,37 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Tahun Pelajaran</label>
-                            <input v-model="massForm.academic_year" type="text" placeholder="2026/2027" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Tahun Pelajaran</label>
+                            <input v-model="massForm.academic_year" type="text" placeholder="2026/2027" class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Keterangan</label>
-                            <input v-model="massForm.notes" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">Keterangan</label>
+                            <input v-model="massForm.notes" type="text" class="input">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">TMT Mulai</label>
-                            <input v-model="massForm.start_date" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">TMT Mulai</label>
+                            <input v-model="massForm.start_date" type="date" class="input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">TMT Selesai</label>
-                            <input v-model="massForm.end_date" type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
+                            <label class="label">TMT Selesai</label>
+                            <input v-model="massForm.end_date" type="date" class="input">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Pilih GTK ({{ massForm.employee_ids.length }} terpilih)</label>
+                        <label class="label">Pilih GTK ({{ massForm.employee_ids.length }} terpilih)</label>
                         <div class="mt-1 max-h-48 overflow-y-auto rounded-md border border-gray-200">
                             <label v-for="employee in employees" :key="employee.id" class="flex items-center gap-2 border-b border-gray-100 px-3 py-1.5 text-sm hover:bg-gray-50">
-                                <input v-model="massForm.employee_ids" type="checkbox" :value="employee.id" class="rounded border-gray-300 text-emerald-600">
+                                <input v-model="massForm.employee_ids" type="checkbox" :value="employee.id" class="checkbox">
                                 <span class="text-gray-700">{{ employee.nigy }} — {{ employee.name }}</span>
                             </label>
                         </div>
-                        <p v-if="massForm.errors.employee_ids" class="mt-1 text-xs text-red-600">{{ massForm.errors.employee_ids }}</p>
+                        <p v-if="massForm.errors.employee_ids" class="error-text" role="alert">{{ massForm.errors.employee_ids }}</p>
                     </div>
                     <div class="flex justify-end gap-2 pt-2">
-                        <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Batal</button>
-                        <button type="submit" :disabled="massForm.processing" class="rounded-md bg-emerald-700 px-4 py-2 text-sm text-white hover:bg-emerald-800 disabled:opacity-50">
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="massForm.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">
                             Tetapkan {{ massForm.employee_ids.length }} GTK
                         </button>
                     </div>

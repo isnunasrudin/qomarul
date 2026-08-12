@@ -14,11 +14,11 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <a :href="route('admin.decrees.preview-pdf', decree.id)" target="_blank"
-                   class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+                   class="btn-secondary">
                     Pratinjau PDF
                 </a>
                 <a v-if="downloadUrl" :href="downloadUrl" target="_blank" rel="noopener"
-                   class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                   class="btn-primary">
                     Unduh PDF
                 </a>
                 <button v-if="can.submit" type="button" @click="action('submit')"
@@ -30,22 +30,22 @@
                     Verifikasi & Beri Nomor
                 </button>
                 <button v-if="can.reject" type="button" @click="openReject"
-                        class="rounded-md border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                        class="btn-danger">
                     Tolak
                 </button>
                 <button v-if="can.sign" type="button" @click="confirmIssue"
-                        class="rounded-md bg-emerald-700 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                        class="btn-primary">
                     Setujui & Tanda Tangani
                 </button>
                 <button v-if="can.cancel" type="button" @click="openCancel"
-                        class="rounded-md border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                        class="btn-danger">
                     Batalkan
                 </button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div class="rounded-lg bg-white p-5 shadow-sm lg:col-span-2">
+            <div class="card p-5 lg:col-span-2">
                 <h3 class="mb-3 text-sm font-semibold text-gray-700">Isi SK</h3>
                 <div class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
                     <div>
@@ -92,7 +92,7 @@
                 </p>
             </div>
 
-            <div class="rounded-lg bg-white p-5 shadow-sm">
+            <div class="card p-5">
                 <h3 class="mb-3 text-sm font-semibold text-gray-700">Riwayat Alur</h3>
                 <ol class="space-y-3">
                     <li v-for="log in decree.workflow_logs" :key="log.id" class="border-l-2 border-emerald-200 pl-3">
@@ -109,14 +109,14 @@
         </div>
 
         <div v-if="modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="modal = null">
-            <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div class="w-full max-w-md card p-6">
                 <h3 class="mb-2 text-base font-semibold text-gray-800">{{ modal.title }}</h3>
                 <p class="mb-3 text-sm text-gray-500">{{ modal.hint }}</p>
                 <form @submit.prevent="submitModal" class="space-y-4">
                     <textarea v-model="modal.notes" rows="3" required placeholder="Alasan (wajib)"
-                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"></textarea>
+                              class="input"></textarea>
                     <div class="flex justify-end gap-2">
-                        <button type="button" @click="modal = null" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Batal</button>
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
                         <button type="submit" class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Kirim</button>
                     </div>
                 </form>
