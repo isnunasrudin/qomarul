@@ -85,6 +85,7 @@ const menu = computed(() => {
             { label: 'Jenis SK', href: '/admin/decree-types' },
             { label: 'Pengguna', href: '/admin/users' },
             { label: 'Pengaturan Yayasan', href: '/admin/settings' },
+            { label: 'Sertifikat & Tanda Tangan', href: '/admin/certificates' },
         );
     }
 

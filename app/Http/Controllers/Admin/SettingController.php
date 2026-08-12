@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,6 +46,47 @@ class SettingController extends Controller
         }
 
         return back()->with('success', __('common.updated'));
+    }
+
+    /**
+     * Unggah gambar tanda tangan basah (PRD F7.16–F7.20).
+     * Hanya Admin Yayasan, konfirmasi ulang kata sandi, izin 0400,
+     * tercatat di audit log.
+     */
+    public function updateSignature(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Setting::class);
+
+        $data = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'file' => ['required', 'file', 'max:2048'],
+        ]);
+
+        $file = $request->file('file');
+
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($file->getContent());
+
+        if (! in_array($mime, ['image/png', 'image/jpeg'], true)) {
+            return back()->withErrors(['file' => 'Gambar tanda tangan harus PNG atau JPG.'])->withInput();
+        }
+
+        $path = $file->storeAs('signature', 'signature-basah.png', 'private');
+
+        if (function_exists('chmod')) {
+            @chmod(Storage::disk('private')->path($path), 0400);
+        }
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'signature_replaced',
+            'auditable_type' => Setting::class,
+            'auditable_id' => 'foundation.signature_path',
+            'new_values' => ['path' => $path],
+        ]);
+
+        Setting::set('foundation.signature_path', $path, 'foundation');
+
+        return back()->with('success', 'Gambar tanda tangan diganti dan disimpan secara privat (izin 0400).');
     }
 
     /** @return array<string, mixed> */

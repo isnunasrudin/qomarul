@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| **Versi** | 1.11 |
+| **Versi** | 1.13 |
 | **Tanggal** | 12 Agustus 2026 |
-| **Status** | 22 keputusan kunci terkonfirmasi (§12); **F1–F4 selesai** — eksekusi memakai **Laravel 13.25** (rilis terbaru saat mulai, bukan Laravel 11; tanpa perubahan arsitektur) |
+| **Status** | 22 keputusan kunci terkonfirmasi (§12); **F1–F5 selesai** — eksekusi memakai **Laravel 13.25** (rilis terbaru saat mulai, bukan Laravel 11; tanpa perubahan arsitektur) |
 | **Bahasa** | Kode & basis data: Inggris · Antarmuka & dokumen: Indonesia (§6.1) |
 | **Pemilik Produk** | Bidang Personalia & SDM YPP Qomarul Hidayah |
 | **Stack** | Laravel 13 + Inertia.js + Vue 3 + Tailwind CSS + MySQL/MariaDB |
@@ -662,7 +662,7 @@ work_units ──1:N── users
 | **F2b — Portal GTK** | Akun massal GTK, beranda mandiri, sunting data pribadi, unggah berkas & arsip SK lama, antrean verifikasi arsip, tampilan ponsel | 1–2 minggu | ✅ **selesai 12 Agu 2026** |
 | **F3 — Tugas Tambahan** | Penetapan berperiode, validasi irisan & kuota, riwayat, penetapan massal | 1 minggu | ✅ **selesai 12 Agu 2026** |
 | **F4 — SK Tunggal** | Alur draft→ajukan→verifikasi→ttd, penomoran atomik, snapshot, generate PDF DomPDF, pratinjau draft | 2–3 minggu | ✅ **selesai 12 Agu 2026** |
-| **F5 — Tanda Tangan & Verifikasi** | Manajemen sertifikat, penandatanganan PKCS#12, QR, halaman verifikasi publik, hash & unggah-verifikasi | 2 minggu | ⬜ |
+| **F5 — Tanda Tangan & Verifikasi** | Manajemen sertifikat, penandatanganan PKCS#12, QR, halaman verifikasi publik, hash & unggah-verifikasi | 2 minggu | ✅ **selesai 12 Agu 2026** |
 | **F6 — Batch** | Batch generate via queue, progres real-time, tanda tangan massal, unduh ZIP/gabungan, laporan hasil | 1–2 minggu | ⬜ |
 | **F7 — Dashboard & Audit** | Dashboard per peran, laporan + ekspor, notifikasi, audit log & penampilnya | 1–2 minggu | ⬜ |
 | **F8 — Uji & Migrasi** | UAT bersama Admin Yayasan & Admin Satker, migrasi data GTK eksisting, unggah arsip PDF SK lama (metadata menyusul), pelatihan, *go-live* | 2 minggu | ⬜ |

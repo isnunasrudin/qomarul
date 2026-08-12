@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| **Versi** | 1.6 |
+| **Versi** | 1.8 |
 | **Tanggal** | 12 Agustus 2026 |
 | **Acuan** | [`prd.md`](./prd.md) v1.8 — 22 keputusan kunci (§12) |
 | **Stack** | **Laravel 13.25** (PHP 8.3) · Inertia.js · Vue 3 · Tailwind CSS 4 · MySQL/MariaDB · Redis |
@@ -343,6 +343,10 @@ SK tunggal terbit end-to-end dengan PDF benar di kertas F4 ✅ (verifikasi byte-
 
 ## Fase F5 — Tanda Tangan Digital & Verifikasi
 
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 137/138 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless end-to-end: admin (draft→ajukan→verifikasi, nomor `002/SK-PPT/SD1/YPP-QH/VIII/2026`) → ketua (login + 2FA TOTP → **Setujui & Tanda Tangani**) → PDF bertanda tangan terunduh (ByteRange + `/Sig` di byte-stream) → halaman `/verifikasi/{uuid}` menampilkan **✅ SK VALID** + data minimum, tanpa error console.
+> **Catatan teknis:** `tecnickcom/tcpdf` dipakai versi **6.11** (Fpdi 2.6 tidak kompatibel TCPDF 7 — `_out()` hilang). QR dirender PNG memakai GD + matrix BaconQrCode (`App\Support\QrCodePng`) karena imagick tidak tersedia. Font Arial = **Liberation Sans** diunduh dari repositori Liberation Fonts (release 2.1.5) → `public/fonts/arial.ttf` + `arialbd.ttf` (dipakai DomPDF); TCPDF memakai helvetica bawaan paket.
+
 **Estimasi 2 minggu · Prasyarat: F4**
 
 ### Tujuan
@@ -351,13 +355,30 @@ PDF terbit tertandatangani kriptografis dan dapat diverifikasi publik lewat QR.
 ### Dependensi
 
 ```bash
-composer require setasign/fpdi tecnickcom/tcpdf
+composer require setasign/fpdi tecnickcom/tcpdf:^6.7
 composer require simplesoftwareio/simple-qrcode
 ```
 
 ### Pekerjaan
 
-- [ ] Bangkitkan sertifikat self-signed:
+- [x] Bangkitkan sertifikat self-signed (dev: `storage/app/private/certificates/dev-yayasan.p12`, terdaftar via `CertificateManager::store`)
+- [x] `SignerInterface` + implementasi `SelfSignedPkcs12Signer` (TCPDF 6 `setSignature()`, PKCS#12 via openssl)
+- [x] `CertificateManager`: unggah `.p12`, kata sandi via `Crypt`, baca metadata (subject, issuer, serial, masa berlaku, fingerprint); rotasi: sertifikat lama dinonaktifkan
+- [x] Simpan `.p12` di `storage/app/private/certificates/` — di luar *document root*
+- [x] Pengamanan gambar tanda tangan (PRD F7.16–F7.20): `storage/app/private/signature/`, izin `0400`, tanpa rute HTTP, konfirmasi kata sandi + audit `signature_replaced`, tidak muncul di pratinjau draft (template hanya merender saat `$is_signed`)
+- [x] Pipeline penerbitan: render DomPDF → sisipkan QR (data URI PNG) → tandatangani (bila sertifikat aktif) → hitung SHA-256 → simpan `decree_signatures`
+- [x] QR berisi URL `https://<domain>/verifikasi/{uuid}`, disisipkan sebagai data URI
+- [x] Halaman verifikasi publik Blade (`/verifikasi/{uuid}` — tanpa login, tanpa Inertia auth): nomor, nama, NIGY, satuan kerja, jabatan, tanggal terbit, status
+  - Menampilkan data minimum saja — tanpa NIK, alamat, atau berkas (`PublicPageTest` membuktikan)
+  - Status `cancelled` → tampilan ⛔ DIBATALKAN + tanggal & alasan; `superseded` → DIGANTI + nomor SK pengganti
+- [x] Verifikasi mandiri: unggah PDF → bandingkan hash → laporkan cocok/tidak
+- [x] *Rate limit* endpoint verifikasi (30/menit halaman, 10/menit periksa berkas)
+- [x] Rotasi sertifikat: arsipkan yang lama, SK lama tetap terverifikasi dengan sertifikat saat penerbitan (`certificate_id` di `decree_signatures`)
+- [x] Peringatan 60 hari sebelum sertifikat kedaluwarsa (badge "≤ 60 hari" + warna kedaluwarsa di halaman sertifikat)
+- [x] **Manajemen sertifikat lengkap** (`/admin/certificates`, hanya Admin Yayasan):
+  - **Buat sertifikat** X.509 self-signed dari aplikasi (`CertificateGenerator`): isi CN, O, OU, C, ST, L, email, masa berlaku, ukuran kunci RSA (2048/3072/4096), digest (SHA-256/384/512), kata sandi .p12 → langsung diaktifkan, lama diarsipkan
+  - **Detail lengkap** per sertifikat (parse .p12 tersimpan): subject & issuer per field, serial, fingerprint, masa berlaku, algoritma tanda tangan, Subject Key Identifier, ekstensi X.509, sertifikat PEM
+  - Unggah `.p12` eksternal + validasi kata sandi
   ```bash
   openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650 \
     -subj "/CN=Yayasan Pondok Pesantren Qomarul Hidayah/O=YPP Qomarul Hidayah/C=ID"
@@ -478,7 +499,7 @@ Batch perpanjangan pertama terbit dari sistem produksi; pemulihan cadangan terbu
 | F2b | Portal mandiri GTK | 1–2 mgg | F2 | ✅ **selesai 12 Agu 2026** |
 | F3 | Tugas tambahan | 1 mgg | F2 | ✅ **selesai 12 Agu 2026** |
 | F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ✅ **selesai 12 Agu 2026** |
-| F5 | Tanda tangan digital & verifikasi | 2 mgg | F4 | ⬜ |
+| F5 | Tanda tangan digital & verifikasi | 2 mgg | F4 | ✅ **selesai 12 Agu 2026** |
 | F6 | Batch generate | 1–2 mgg | F5 | ⬜ |
 | F7 | Dashboard, laporan, audit | 1–2 mgg | F4 | ⬜ |
 | F8 | Uji, migrasi, go-live | 2 mgg | semua | ⬜ |

@@ -199,30 +199,41 @@
 <div style="padding-left: 10cm">
     <table style="line-height: .9; width: 100%;">
         <tr>
-            <td>Ditetapkan di</td>
-            <td>:</td>
-            <td>{{ $issued_place }}</td>
-        </tr>
-        <tr>
-            <td>Pada tanggal</td>
-            <td>:</td>
-            <td>{{ $issued_date }}</td>
-        </tr>
-        <tr>
-            <td colspan="3">
-                <p style="padding: 0;">{{ $chairman_position }}</p>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="3" style="padding: 0; height: 2cm; vertical-align: middle;">
-                @if($is_signed && $signature_path)
-                    <img src="{{ public_path($signature_path) }}" style="width: 250px;">
+            <td style="width: 2.5cm;">
+                @if($qr_data_uri)
+                    <img src="{{ $qr_data_uri }}" style="width: 90px; height: 90px;">
                 @endif
             </td>
-        </tr>
-        <tr>
-            <td colspan="3">
-                <p style="padding: 0; font-weight: bold; text-decoration: underline;">{{ $chairman_name }}</p>
+            <td>
+                <table style="line-height: .9; width: 100%;">
+                    <tr>
+                        <td style="width: 3cm;">Ditetapkan di</td>
+                        <td style="width: 10px;">:</td>
+                        <td>{{ $issued_place }}</td>
+                    </tr>
+                    <tr>
+                        <td>Pada tanggal</td>
+                        <td>:</td>
+                        <td>{{ $issued_date }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <p style="padding: 0;">{{ $chairman_position }}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" style="padding: 0; height: 2cm; vertical-align: middle;">
+                            @if($is_signed && $signature_path)
+                                <img src="{{ public_path($signature_path) }}" style="width: 250px;">
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">
+                            <p style="padding: 0; font-weight: bold; text-decoration: underline;">{{ $chairman_name }}</p>
+                        </td>
+                    </tr>
+                </table>
             </td>
         </tr>
     </table>

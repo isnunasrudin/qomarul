@@ -16,7 +16,7 @@ class PdfRenderer
     /** F4/Folio 215 × 330 mm dalam pt */
     private const PAPER_F4 = [0, 0, 609.45, 935.43];
 
-    public function render(Decree $decree, bool $draftPreview = false): string
+    public function render(Decree $decree, bool $draftPreview = false, ?string $qrDataUri = null): string
     {
         $snapshot = $decree->snapshot_data
             ?? app(DecreeSnapshotBuilder::class)->build($decree);
@@ -34,6 +34,7 @@ class PdfRenderer
             'is_signed' => ! $draftPreview && $decree->status->value === 'issued',
             'foundation_logo' => Setting::get('foundation.logo_path'),
             'signature_path' => Setting::get('foundation.signature_path'),
+            'qr_data_uri' => $qrDataUri,
         ]);
 
         $pdf = Pdf::loadView("decrees.{$view}", $payload);

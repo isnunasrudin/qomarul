@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdditionalDutyController;
+use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\DecreeController;
 use App\Http\Controllers\Admin\DecreeTypeController;
 use App\Http\Controllers\Admin\DocumentController;
@@ -18,7 +19,17 @@ use App\Http\Controllers\Auth\PasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Portal\PortalController;
+use App\Http\Controllers\Public\VerificationController;
 use Illuminate\Support\Facades\Route;
+
+// Verifikasi publik — tanpa auth (PRD F7.7–F7.11)
+Route::get('/verifikasi/{uuid}', [VerificationController::class, 'show'])
+    ->middleware('throttle:30,1')
+    ->name('verification.show');
+
+Route::post('/verifikasi/periksa', [VerificationController::class, 'verifyFile'])
+    ->middleware('throttle:10,1')
+    ->name('verification.file');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
@@ -54,6 +65,12 @@ Route::middleware('auth')->group(function () {
 
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+            Route::post('settings/signature', [SettingController::class, 'updateSignature'])->name('settings.signature');
+
+            Route::get('certificates', [CertificateController::class, 'index'])->name('certificates.index');
+            Route::post('certificates', [CertificateController::class, 'store'])->name('certificates.store');
+            Route::post('certificates/generate', [CertificateController::class, 'generate'])->name('certificates.generate');
+            Route::get('certificates/{certificate}/detail', [CertificateController::class, 'detail'])->name('certificates.detail');
         });
 
         // Data GTK — Ketua Yayasan (baca), Admin Yayasan, Admin Satker
