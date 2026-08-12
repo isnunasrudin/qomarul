@@ -45,7 +45,7 @@ class TwoFactorController extends Controller
         $user = $this->pendingUser();
 
         $data = $request->validate([
-            'secret' => ['required', 'string'],
+            'secret' => ['required', 'string', 'size:16'],
             'code' => ['required', 'string', 'size:6'],
         ]);
 
