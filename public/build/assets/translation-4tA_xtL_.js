@@ -1,0 +1,1 @@
+import{f as e,i as t}from"./app-CJn_13MD.js";var n=t(),r=e(()=>n.props.lang??{});function i(e,t={}){let n=r.value[e];n===void 0&&(n=e);for(let[e,r]of Object.entries(t))n=n.replaceAll(`:${e}`,String(r));return n}function a(){return{t:i}}export{a as t};
