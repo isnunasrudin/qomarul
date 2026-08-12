@@ -1,58 +1,124 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo">
 </p>
 
-## About Laravel
+<h1 align="center">SIMQOH — Sistem Informasi Manajemen Qomarul Hidayah</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  Aplikasi manajemen kepegawaian (GTK) dan Surat Keputusan (SK) untuk
+  <strong>YPP Qomarul Hidayah</strong> — Gondang, Tugu, Trenggalek, Jawa Timur.
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tentang
 
-## Learning Laravel
+SIMQOH memusatkan data GTK seluruh satuan kerja (SD, SMP, SMK), menerbitkan SK
+secara otomatis dengan penomoran aman, tanda tangan digital, dan verifikasi
+publik melalui QR.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Fitur utama
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Kepegawaian**
+- CRUD GTK dengan normalisasi gelar otomatis (depan & belakang, bentuk baku EYD: `Drs. Ahmad Fauzi, S.Kom., M.Pd.`)
+- NIGY otomatis & atomik (`2026SD1001`) — format dapat dikonfigurasi, direset per tahun per satker
+- Impor massal Excel (pratinjau validasi per baris, all-or-nothing) + opsi membuat akun pengguna otomatis
+- Ekspor daftar GTK / template impor
+- Kelengkapan profil (persentase + daftar data kurang)
+- Tugas tambahan, riwayat pendidikan, berkas kepegawaian
+- Akun pengguna per GTK (username = NIGY, sandi sementara)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**Surat Keputusan**
+- Jenis SK & batch (penerbitan massal), alur verifikasi → tanda tangan
+- PDF SK (template Blade, kertas F4, kop & tembusan yayasan)
+- Snapshot data pada saat terbit (immutable) + QR verifikasi publik
+- Arsip SK lama (unggah pindaian oleh GTK, verifikasi admin)
 
-## Agentic Development
+**Akses & keamanan**
+- 4 peran: Ketua Yayasan, Admin Yayasan, Admin Satuan Kerja, GTK
+- Tenancy satuan kerja (admin satker hanya melihat GTK satkernya)
+- 2FA (TOTP) opsional per pengguna — aktif hanya setelah setup selesai
+- Impersonasi: admin yayasan → semua pengguna; admin satker → GTK satker sendiri
+- Login Google (Socialite) — email harus cocok dengan akun terdaftar
+- Audit log, notifikasi, laporan (PDF/Excel)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+**Portal GTK**
+- Beranda ringkasan, data pribadi (dengan sorotan data kosong), berkas, arsip SK lama
+- Halaman Keamanan mandiri (2FA & ganti sandi)
+
+## Teknologi
+
+- Laravel **13** (PHP ^8.3)
+- Inertia.js + Vue 3 + Tailwind CSS 4
+- DomPDF, maatwebsite/excel, laravel/socialite, pragmarx/google2fa
+- MySQL (produksi) / SQLite (pengujian)
+
+## Instalasi
 
 ```bash
-composer require laravel/boost --dev
+composer install
+npm install
 
-php artisan boost:install
+cp .env.example .env
+php artisan key:generate
+
+# isi kredensial Google OAuth di .env bila ingin login Google
+# GOOGLE_CLIENT_ID=...
+# GOOGLE_CLIENT_SECRET=...
+# GOOGLE_REDIRECT_URI=http://127.0.0.1:8000/login/google/callback
+
+php artisan migrate --seed   # atau migrate:fresh --seed untuk data demo
+npm run build                # atau npm run dev saat pengembangan
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Akun demo
 
-## Contributing
+Semua akun demo memakai kata sandi `Qomarul123!` (wajib diganti pada masuk pertama):
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Username | Peran |
+|---|---|
+| `ketua` | Ketua Yayasan |
+| `admin` | Admin Yayasan |
+| `admin.sd1` | Admin Satuan Kerja (SD) |
+| `2026SD1001` | GTK (Ahmad Fauzi) |
 
-## Code of Conduct
+## Pengujian & kualitas
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+./vendor/bin/pest                # suite lengkap
+./vendor/bin/phpstan analyse     # static analysis
+./vendor/bin/pint                # code style
+npm run build                    # build aset frontend
+```
 
-## Security Vulnerabilities
+## Struktur penting
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```
+app/
+├── Enums/                  # peran, status, kategori, jenjang
+├── Models/
+│   └── Concerns/           # Auditable, BelongsToTenant, FormatsDatesLocally
+├── Policies/               # RBAC per model
+├── Services/
+│   ├── Nigy/               # pembangkit NIGY + allocator nomor atomik
+│   ├── Numbering/          # NumberAllocator (NIGY & nomor SK)
+│   ├── Decree/             # snapshot, render PDF
+│   └── Employee/           # impor massal, kelengkapan profil
+├── Support/                # IndonesianDate, TitleFormatter, PhotoProcessor
+└── Http/Controllers/
+    ├── Admin/              # manajemen (yayasan/satker)
+    ├── Portal/             # portal mandiri GTK
+    ├── Auth/               # login, 2FA, Socialite, impersonasi
+    └── Security/           # keamanan akun mandiri
+resources/js/
+├── Layouts/                # AdminLayout (sidebar, notifikasi, banner impersonasi)
+├── Pages/                  # halaman per modul
+└── utils/ helpers/         # format tanggal Indonesia, gelar, dll.
+```
 
-## License
+## Lisensi
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Dikembangkan untuk internal **YPP Qomarul Hidayah**. Dibangun di atas
+[Laravel](https://laravel.com) yang dilisensikan di bawah
+[MIT license](https://opensource.org/licenses/MIT).
