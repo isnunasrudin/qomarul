@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'failed' => 'Kredensial yang diberikan tidak cocok dengan data kami.',
+    'password' => 'Kata sandi yang diberikan salah.',
+    'throttle' => 'Terlalu banyak percobaan masuk. Silakan coba lagi dalam :seconds detik.',
+    'inactive' => 'Akun Anda dinonaktifkan. Hubungi Admin Yayasan.',
+    'login' => 'Masuk',
+    'logout' => 'Keluar',
+    'username' => 'Nama pengguna / Email',
+    'email' => 'Alamat email',
+    'password_label' => 'Kata sandi',
+    'remember' => 'Ingat saya',
+    'forgot' => 'Lupa kata sandi?',
+    'password_change' => 'Anda wajib mengganti kata sandi pada masuk pertama.',
+    'password_change_title' => 'Ganti Kata Sandi',
+    'password_new' => 'Kata sandi baru',
+    'password_new_confirmation' => 'Ulangi kata sandi baru',
+    'password_changed' => 'Kata sandi berhasil diganti.',
+    'password_current' => 'Kata sandi saat ini',
+    'two_factor_title' => 'Verifikasi Dua Langkah',
+    'two_factor_code' => 'Kode dari aplikasi autentikator Anda',
+    'two_factor_code_invalid' => 'Kode tidak valid. Silakan coba lagi.',
+    'two_factor_required' => 'Akun Anda mewajibkan verifikasi dua langkah.',
+    'two_factor_enrolled' => 'Verifikasi dua langkah aktif.',
+    'logout_confirmation' => 'Yakin ingin keluar?',
+];
