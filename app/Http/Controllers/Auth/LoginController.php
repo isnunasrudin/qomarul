@@ -75,6 +75,10 @@ class LoginController extends Controller
             return redirect()->route('password.change');
         }
 
+        if ($user->role === UserRole::Employee) {
+            return redirect()->route('portal.home');
+        }
+
         return redirect()->intended(route('dashboard'));
     }
 }

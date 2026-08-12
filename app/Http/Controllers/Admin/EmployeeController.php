@@ -19,6 +19,7 @@ use App\Models\Document;
 use App\Models\Employee;
 use App\Models\EmploymentStatus;
 use App\Models\Position;
+use App\Models\User;
 use App\Models\WorkUnit;
 use App\Services\Employee\EmployeeImportService;
 use App\Services\Employee\ProfileCompletenessService;
@@ -120,6 +121,13 @@ class EmployeeController extends Controller
                 now()->addHour(),
                 ['document' => $document->id],
             );
+
+            $document->uploaded_by_employee = $document->uploaded_by
+                ? User::query()
+                    ->where('id', $document->uploaded_by)
+                    ->where('role', UserRole::Employee)
+                    ->exists()
+                : false;
         });
 
         return Inertia::render('Admin/Employees/Show', [

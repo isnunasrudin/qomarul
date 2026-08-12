@@ -44,6 +44,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $signed_at
  *
  * @use HasFactory<DecreeFactory>
+ *
+ * @property string|null $download_url
  */
 class Decree extends Model
 {

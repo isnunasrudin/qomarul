@@ -7,7 +7,7 @@
                 {{ isEdit ? `Sunting — ${employee.name}` : 'Tambah GTK' }}
             </h2>
             <div v-if="isEdit" class="flex gap-2">
-                <button type="button" @click="showNigyField = !showNigyField"
+                <button type="button" @click="toggleNigyEdit"
                         :disabled="!can.updateNigy"
                         class="rounded-md border border-amber-300 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 disabled:opacity-40"
                         :title="!can.updateNigy ? 'Hanya Admin Yayasan yang dapat menimpa NIGY' : ''">
@@ -107,9 +107,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+
+const route = inject('route');
 import { useTranslation } from '../../../helpers/translation';
 
 const { t } = useTranslation();
@@ -117,10 +119,11 @@ const { t } = useTranslation();
 const props = defineProps([
     'employee', 'workUnits', 'positions', 'employmentStatuses',
     'genders', 'religions', 'maritalStatuses', 'documentCategories', 'nigyLocked',
+    'can',
 ]);
 
 const isEdit = computed(() => Boolean(props.employee));
-const can = computed(() => props.employee?.can ?? {});
+const can = computed(() => props.can ?? {});
 
 const form = useForm({
     nigy: props.employee?.nigy ?? '',
@@ -160,6 +163,14 @@ const form = useForm({
 
 const activeTab = ref('pribadi');
 const showNigyField = ref(false);
+
+function toggleNigyEdit() {
+    showNigyField.value = !showNigyField.value;
+
+    if (showNigyField.value) {
+        activeTab.value = 'kepegawaian';
+    }
+}
 
 const tabs = [
     { key: 'pribadi', label: 'Pribadi' },

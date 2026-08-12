@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $employee_id
- * @property string $level
+ * @property EducationLevel $level
  * @property string $institution
  * @property string $major
  * @property string $start_year

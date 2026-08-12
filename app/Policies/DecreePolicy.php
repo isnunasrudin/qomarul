@@ -39,7 +39,7 @@ class DecreePolicy
 
     public function submit(User $user, Decree $decree): bool
     {
-        return $decree->status->value === 'draft'
+        return in_array($decree->status->value, ['draft', 'rejected'], true)
             && $user->hasRole(UserRole::FoundationAdmin, UserRole::UnitAdmin);
     }
 
@@ -65,5 +65,19 @@ class DecreePolicy
     {
         return $decree->status->value === 'issued'
             && $user->hasRole(UserRole::FoundationHead);
+    }
+
+    public function verifyLegacy(User $user, Decree $decree): bool
+    {
+        return $decree->is_legacy
+            && $decree->legacy_verified_at === null
+            && $user->hasRole(UserRole::FoundationAdmin, UserRole::UnitAdmin);
+    }
+
+    public function deleteLegacy(User $user, Decree $decree): bool
+    {
+        return $decree->is_legacy
+            && $decree->legacy_verified_at === null
+            && $user->hasRole(UserRole::FoundationAdmin, UserRole::UnitAdmin);
     }
 }

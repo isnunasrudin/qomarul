@@ -67,9 +67,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { inject, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+
+const route = inject('route');
 
 defineProps(['preview']);
 

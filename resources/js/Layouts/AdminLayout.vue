@@ -68,7 +68,12 @@ const menu = computed(() => {
     const items = [{ label: 'Dasbor', href: '/' }];
 
     if (role === 'foundation_head' || role === 'foundation_admin' || role === 'unit_admin') {
-        items.push({ label: 'Data GTK', href: '/admin/employees' });
+        items.push(
+            { label: 'Data GTK', href: '/admin/employees' },
+            { label: 'Surat Keputusan', href: '/admin/decrees' },
+            { label: 'Tugas Tambahan', href: '/admin/duties' },
+            { label: 'Verifikasi Arsip SK', href: '/admin/decree-legacy' },
+        );
     }
 
     if (role === 'foundation_head' || role === 'foundation_admin') {

@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property int $size
  * @property int|null $uploaded_by
  * @property string|null $signed_url
+ * @property bool $uploaded_by_employee
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *

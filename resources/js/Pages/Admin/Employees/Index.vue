@@ -112,9 +112,11 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { inject, reactive, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+
+const route = inject('route');
 import { useTranslation } from '../../../helpers/translation';
 
 const { t } = useTranslation();

@@ -103,7 +103,13 @@
                          class="flex items-center justify-between rounded-lg border border-gray-100 p-3">
                         <div class="min-w-0">
                             <p class="truncate text-sm font-medium text-gray-700">{{ document.name }}</p>
-                            <p class="text-xs text-gray-400">{{ categoryLabel(document.category) }} · {{ (document.size / 1024).toFixed(0) }} KB</p>
+                            <p class="text-xs text-gray-400">
+                                {{ categoryLabel(document.category) }} · {{ (document.size / 1024).toFixed(0) }} KB
+                                <span v-if="document.uploaded_by_employee"
+                                      class="ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                                    diubah oleh yang bersangkutan
+                                </span>
+                            </p>
                         </div>
                         <div class="flex gap-2">
                             <a :href="document.signed_url" target="_blank" class="text-emerald-700 hover:underline">Unduh</a>
@@ -196,9 +202,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, inject, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+
+const route = inject('route');
 import { useTranslation } from '../../../helpers/translation';
 
 const { t } = useTranslation();

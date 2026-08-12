@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\Admin\AdditionalDutyController;
+use App\Http\Controllers\Admin\DecreeController;
 use App\Http\Controllers\Admin\DecreeTypeController;
 use App\Http\Controllers\Admin\DocumentController;
+use App\Http\Controllers\Admin\DutyAssignmentController;
 use App\Http\Controllers\Admin\EducationController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmploymentStatusController;
+use App\Http\Controllers\Admin\LegacyDecreeController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
@@ -14,6 +17,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordChangeController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Portal\PortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -71,11 +75,50 @@ Route::middleware('auth')->group(function () {
 
             Route::post('employees/{employee}/documents', [DocumentController::class, 'store'])->name('employees.documents.store');
             Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+
+            Route::get('decree-legacy', [LegacyDecreeController::class, 'index'])->name('decree-legacy.index');
+            Route::post('decree-legacy/{decree}/verify', [LegacyDecreeController::class, 'verify'])->name('decree-legacy.verify');
+            Route::delete('decree-legacy/{decree}', [LegacyDecreeController::class, 'destroy'])->name('decree-legacy.destroy');
+
+            Route::get('duties', [DutyAssignmentController::class, 'index'])->name('duties.index');
+            Route::post('duties', [DutyAssignmentController::class, 'store'])->name('duties.store');
+            Route::post('duties/mass', [DutyAssignmentController::class, 'storeMass'])->name('duties.mass');
+            Route::put('duties/{assignment}', [DutyAssignmentController::class, 'update'])->name('duties.update');
+            Route::delete('duties/{assignment}', [DutyAssignmentController::class, 'destroy'])->name('duties.destroy');
+
+            Route::get('decrees', [DecreeController::class, 'index'])->name('decrees.index');
+            Route::get('decrees/create', [DecreeController::class, 'create'])->name('decrees.create');
+            Route::post('decrees', [DecreeController::class, 'store'])->name('decrees.store');
+            Route::get('decrees/{decree}', [DecreeController::class, 'show'])->name('decrees.show');
+            Route::get('decrees/{decree}/preview-pdf', [DecreeController::class, 'previewPdf'])->name('decrees.preview-pdf');
+            Route::post('decrees/{decree}/submit', [DecreeController::class, 'submit'])->name('decrees.submit');
+            Route::post('decrees/{decree}/verify', [DecreeController::class, 'verify'])->name('decrees.verify');
+            Route::post('decrees/{decree}/reject', [DecreeController::class, 'reject'])->name('decrees.reject');
+            Route::post('decrees/{decree}/issue', [DecreeController::class, 'issue'])->name('decrees.issue');
+            Route::post('decrees/{decree}/cancel', [DecreeController::class, 'cancel'])->name('decrees.cancel');
         });
+
+        Route::get('decrees/{decree}/download', [DecreeController::class, 'downloadPdf'])
+            ->middleware(['role:foundation_head,foundation_admin,unit_admin', 'signed'])
+            ->name('admin.decrees.download');
 
         Route::get('documents/{document}/download', [DocumentController::class, 'download'])
             ->middleware(['role:foundation_head,foundation_admin,unit_admin', 'signed'])
             ->name('admin.documents.download');
+
+        // Portal mandiri GTK
+        Route::middleware(['role:employee', 'password.changed'])->prefix('portal')->name('portal.')->group(function () {
+            Route::get('/', [PortalController::class, 'home'])->name('home');
+            Route::put('/profile', [PortalController::class, 'updateProfile'])->name('profile.update');
+            Route::post('/documents', [PortalController::class, 'uploadDocument'])->name('documents.store');
+            Route::post('/decrees/legacy', [PortalController::class, 'uploadLegacy'])->name('decrees.legacy');
+            Route::get('documents/{document}/download', [PortalController::class, 'downloadDocument'])
+                ->middleware('signed')
+                ->name('documents.download');
+            Route::get('decrees/{decree}/download', [PortalController::class, 'downloadDecree'])
+                ->middleware('signed')
+                ->name('decrees.download');
+        });
     });
 
     Route::get('/password/change', [PasswordChangeController::class, 'show'])->name('password.change');

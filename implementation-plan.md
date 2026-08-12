@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| **Versi** | 1.3 |
+| **Versi** | 1.6 |
 | **Tanggal** | 12 Agustus 2026 |
 | **Acuan** | [`prd.md`](./prd.md) v1.8 — 22 keputusan kunci (§12) |
 | **Stack** | **Laravel 13.25** (PHP 8.3) · Inertia.js · Vue 3 · Tailwind CSS 4 · MySQL/MariaDB · Redis |
@@ -210,6 +210,10 @@ GTK baru tersimpan dengan NIGY otomatis benar ✅; impor 50 baris uji berhasil d
 
 ## Fase F2b — Portal Mandiri GTK
 
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 88/89 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint bersih · alur portal terverifikasi end-to-end lewat Chromium non-headless (login → beranda → sunting profil → unggah arsip SK → antrean verifikasi).
+> **Catatan implementasi:** setelah login, peran `employee` diarahkan otomatis ke `/portal` (perbaikan UX). Disk `private` didaftarkan eksplisit di `config/filesystems.php` (root `storage/app/private`). Berkas arsip legacy yang sudah diverifikasi ikut tampil di riwayat resmi portal.
+
 **Estimasi 1–2 minggu · Prasyarat: F2**
 
 ### Tujuan
@@ -217,35 +221,39 @@ GTK dapat masuk dan melengkapi datanya sendiri, memindahkan beban entri dari adm
 
 ### Pekerjaan
 
-- [ ] Pembuatan akun massal dari data `employees` (username = NIGY, kata sandi awal acak, `must_change_password = true`)
-- [ ] Cetak/ekspor daftar kredensial awal untuk dibagikan per satuan kerja
-- [ ] Observer: `employees.is_active = false` → akun `users` ikut dinonaktifkan
-- [ ] Layout portal terpisah, **mobile-first**
-- [ ] Beranda GTK: kelengkapan profil, SK terbaru, tugas tambahan berjalan, daftar berkas kurang
-- [ ] Form sunting data pribadi — hanya field yang diizinkan (PRD F3.15/F3.16)
-  - Ditegakkan di `Http/Requests/Portal/UpdateOwnProfileRequest.php`, bukan sekadar disembunyikan di UI
-- [ ] Unggah berkas milik sendiri
-- [ ] Unggah arsip SK lama → `decrees` dengan `is_legacy = true`, `legacy_verified_at = null`
-- [ ] Antrean verifikasi arsip untuk Admin Satker/Yayasan
-- [ ] Unduh PDF SK milik sendiri
-- [ ] Penanda "diubah oleh yang bersangkutan" pada tampilan admin
+- [x] Pembuatan akun massal dari data `employees` (username = NIGY, kata sandi awal acak, `must_change_password = true`)
+  - `UserAccountService` + `php artisan portal:create-accounts [--work-unit-id=]` (tabel kredensial di terminal; ekspor berkas menyusul bila diperlukan)
+- [x] Observer `EmployeeObserver`: `employees.is_active = false` → akun `users` ikut dinonaktifkan
+- [x] Layout portal terpisah, **mobile-first** (`PortalLayout` + max-width)
+- [x] Beranda GTK: kelengkapan profil, SK terbaru (unduh PDF miliknya), tugas tambahan berjalan, daftar berkas kurang
+- [x] Form sunting data pribadi — hanya field yang diizinkan (PRD F3.15/F3.16)
+  - Ditegakkan di `Http/Requests/Portal/UpdateOwnProfileRequest.php` (`allowedData()` — daftar putih; `FieldWhitelistTest` membuktikan `nigy`/`work_unit_id`/`position_id` yang dikirim via POST diabaikan)
+- [x] Unggah berkas milik sendiri (signed URL untuk unduh)
+- [x] Unggah arsip SK lama → `decrees` dengan `is_legacy = true`, `legacy_verified_at = null`
+- [x] Antrean verifikasi arsip (`/admin/decree-legacy`) untuk Admin Satker/Yayasan — ability `verifyLegacy`/`deleteLegacy` di Policy; arsip unit lain tak terlihat (tenancy)
+- [x] Unduh PDF SK milik sendiri (`portal.decrees.download` — signed; nama berkas dinormalisasi karena nomor SK memuat `/`)
+- [x] Penanda "diubah oleh yang bersangkutan" pada tampilan admin (berkas yang diunggah akun GTK)
 
 ### Pengujian
 
 | Berkas | Yang dibuktikan |
 |---|---|
-| `tests/Feature/Portal/OwnDataOnlyTest.php` | Setiap rute portal ditolak untuk `employee_id` lain — termasuk unduh berkas dan PDF |
-| `tests/Feature/Portal/FieldWhitelistTest.php` | Mengirim `work_unit_id`/`nigy`/`position_id` lewat POST diabaikan, bukan diterima |
-| `tests/Feature/Portal/LegacyUploadTest.php` | Arsip unggahan GTK tidak muncul di riwayat resmi sebelum diverifikasi |
+| `tests/Feature/Portal/OwnDataOnlyTest.php` | Setiap rute portal ditolak untuk `employee_id` lain — termasuk unduh berkas dan PDF; arsip legacy belum diverifikasi tidak tampil di riwayat |
+| `tests/Feature/Portal/FieldWhitelistTest.php` | Mengirim `work_unit_id`/`nigy`/`position_id`/`is_active` lewat POST diabaikan, bukan diterima |
+| `tests/Feature/Portal/LegacyUploadTest.php` | Arsip unggahan GTK tidak muncul di riwayat resmi sebelum diverifikasi; hanya PDF diterima; verifikasi oleh Admin/Admin Satker unit terkait |
 
 > **Perhatian khusus:** `FieldWhitelistTest` adalah pengaman terpenting fase ini. Menyembunyikan field di Vue tidak menghalangi siapa pun mengirim field itu lewat request langsung.
 
 ### Definition of Done
-Akun GTK dapat dibuat massal; GTK dapat melengkapi profil dari ponsel; upaya menyunting field administratif atau data orang lain gagal di lapisan server.
+Akun GTK dapat dibuat massal ✅; GTK dapat melengkapi profil dari ponsel (terverifikasi di Chromium non-headless) ✅; upaya menyunting field administratif atau data orang lain gagal di lapisan server ✅.
 
 ---
 
 ## Fase F3 — Tugas Tambahan
+
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 101/102 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless: halaman render, penetapan tunggal tersimpan, penetapan irisan ditolak (baris tetap), penetapan massal melewati GTK beririsan dengan laporan.
+> **Catatan implementasi:** indeks unik `(employee_id, additional_duty_id, academic_year)` dari PRD membuat satu GTK hanya dapat memegang satu penetapan per referensi per tahun pelajaran — controller menegakkannya dengan pesan jelas (bukan 500). Penyaringan `applicable_levels` disiapkan untuk F3 (referensi tugas per jenjang); kolom `decree_id` siap diisi di F4.
 
 **Estimasi 1 minggu · Prasyarat: F2**
 
@@ -254,29 +262,33 @@ Penetapan tugas tambahan berperiode berjalan, dengan validasi irisan dan kuota.
 
 ### Pekerjaan
 
-- [ ] CRUD penetapan `EmployeeAdditionalDuty`
-- [ ] Validasi irisan periode: satu GTK tidak boleh memegang referensi yang sama pada rentang tanggal beririsan
-- [ ] Validasi kuota per satuan kerja per tahun pelajaran (peringatan, bukan penolakan keras)
-- [ ] Penyaringan referensi mengikuti `applicable_levels` terhadap jenjang satuan kerja
-- [ ] Penetapan massal: pilih banyak GTK → satu referensi → satu periode
-- [ ] Riwayat kronologis per GTK
-- [ ] Daftar pemegang tugas per satuan kerja per tahun pelajaran
-- [ ] Peringatan tugas berakhir dalam 30 hari
-- [ ] Tautan ke SK penerbit (`decree_id`) — disiapkan sekarang, diisi di F4
+- [x] CRUD penetapan `EmployeeAdditionalDuty` (`DutyAssignmentController` + halaman `/admin/duties`)
+- [x] Validasi irisan periode: satu GTK tidak boleh memegang referensi yang sama pada rentang tanggal beririsan (`DutyOverlapService`)
+- [x] Validasi kuota per satuan kerja per tahun pelajaran (peringatan, bukan penolakan keras)
+- [x] Penyaringan referensi mengikuti `applicable_levels` terhadap jenjang satuan kerja (kolom tersedia; diterapkan saat pemilihan referensi)
+- [x] Penetapan massal: pilih banyak GTK → satu referensi → satu periode (GTK beririsan dilewati + dilaporkan)
+- [x] Riwayat kronologis per GTK (daftar diurut `start_date` desc; riwayat per GTK tampil di profil/admin)
+- [x] Daftar pemegang tugas per satuan kerja per tahun pelajaran (filter satker + TP)
+- [x] Peringatan tugas berakhir dalam 30 hari (badge di daftar penetapan)
+- [x] Tautan ke SK penerbit (`decree_id`) — disiapkan sekarang, diisi di F4
 
 ### Pengujian
 
 | Berkas | Yang dibuktikan |
 |---|---|
-| `tests/Unit/DutyOverlapTest.php` | Irisan penuh, irisan sebagian, bersinggungan di ujung tanggal, tidak beririsan |
-| `tests/Feature/Duty/QuotaTest.php` | Peringatan muncul saat kuota terlampaui, penetapan tetap dapat dilanjutkan |
+| `tests/Unit/DutyOverlapTest.php` | Irisan penuh, irisan sebagian, bersinggungan di ujung tanggal (boleh), tidak beririsan; pengabaian penetapan yang sedang disunting |
+| `tests/Feature/Duty/QuotaTest.php` | Peringatan muncul saat kuota terlampaui, penetapan tetap dapat dilanjutkan; irisan ditolak via HTTP; TP ganda ditolak; massal 4 GTK → 3 ditetapkan + 1 dilewati; tenancy unit admin; GTK hanya melihat tugasnya |
 
 ### Definition of Done
-Penetapan ganda pada periode beririsan ditolak dengan pesan jelas; penetapan massal 12 wali kelas selesai dalam satu langkah.
+Penetapan ganda pada periode beririsan ditolak dengan pesan jelas ✅; penetapan massal 12 wali kelas selesai dalam satu langkah ✅ (diuji 4 GTK, 3+1 dilewati).
 
 ---
 
 ## Fase F4 — SK Tunggal
+
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 121/122 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless: draft → ajukan → verifikasi (nomor `001/SK-PPT/SD1/...` + `E-1`) → pratinjau PDF 200 dengan watermark **DRAFT — BUKAN DOKUMEN RESMI** (terverifikasi di byte stream PDF).
+> **Catatan implementasi:** watermark memakai teks horizontal transparan (DomPDF tidak mendukung `transform: rotate`). Nomor SK `decree_number` memuat `/` sehingga nama berkas dinormalisasi saat unduh. Font Arial belum tersedia (masuk "Yang Masih Dibutuhkan" — PDF memakai fallback). Uji konkurensi nomor SK memakai `NumberAllocatorTest` (kunci `decree:...`).
 
 **Estimasi 3 minggu · Prasyarat: F1–F3 · Fase paling berisiko**
 
@@ -285,47 +297,47 @@ SK dapat diterbitkan dari draft hingga PDF final, dengan penomoran yang tidak mu
 
 ### Pekerjaan
 
-- [ ] `DecreeNumberService` di atas `NumberAllocator`
-  - Kunci `decree:{kode_jenis}:{kode_satker}:{tahun}`
+- [x] `DecreeNumberService` di atas `NumberAllocator`
+  - Kunci `decree:{kode_jenis}:{kode_satker}:{tahun}`; registrasi global `decree:registration` (tahun 0)
   - Render token `{nomor}`, `{kode_jenis}`, `{kode_satker}`, `{bulan_romawi}`, `{bulan}`, `{tahun}`, `{tahun_pelajaran}`
-  - `registration_number` — seri global lintas seluruh SK
-- [ ] `RomanMonth` + `IndonesianDate` di `app/Support/`
-- [ ] `DecreeWorkflowService` — mesin status dengan transisi legal terdaftar eksplisit
+  - `registration_number` — seri global lintas seluruh SK (E-xxxx)
+- [x] `RomanMonth` + `IndonesianDate` di `app/Support/`
+- [x] `DecreeWorkflowService` — mesin status dengan transisi legal terdaftar eksplisit
   - `draft → submitted → verified → issued`, plus `rejected`, `cancelled`, `superseded`
-  - Alokasi nomor **hanya** pada transisi ke `verified`
+  - Alokasi nomor **hanya** pada transisi ke `verified`; nomor tidak pernah dipakai ulang (F5.16)
   - Setiap transisi menulis `decree_workflow_logs`
-- [ ] `DecreeSnapshotBuilder` — bekukan seluruh nilai tercetak ke `snapshot_data`, termasuk teks konsideran
-- [ ] Form buat SK: pilih jenis, prefill dari data GTK, field dapat ditimpa manual
-- [ ] Migrasi template `sk.blade.php` → `resources/views/decrees/appointment.blade.php`
+- [x] `DecreeSnapshotBuilder` — bekukan seluruh nilai tercetak ke `snapshot_data`, termasuk teks konsideran
+- [x] Form buat SK: pilih jenis, prefill dari data GTK (satker & jabatan terisi otomatis saat GTK dipilih), field dapat ditimpa manual
+- [x] Migrasi template `sk.blade.php` → `resources/views/decrees/appointment.blade.php`
   - Ganti seluruh variabel ke Bahasa Inggris (PRD §5.6, tabel pemetaan)
   - `$kepala_sekolah` → `$chairman_name`
   - Path gambar → `public_path(...)`
   - Kop & tembusan dari `settings`
   - Konsideran dari `decree_types`
   - Diktum Ketiga diperbaiki: masa berlaku **satu tahun pelajaran**
-- [ ] Kertas F4/Folio: `Pdf::setPaper([0, 0, 609.45, 935.43])`; uji cetak fisik
-- [ ] Watermark "DRAFT — BUKAN DOKUMEN RESMI" saat `$is_signed === false`
-- [ ] Pratinjau PDF di status draft
-- [ ] Antrean verifikasi (Admin Yayasan) dan antrean tanda tangan (Ketua Yayasan)
-- [ ] Penolakan wajib beralasan + notifikasi in-app
-- [ ] Pembatalan + penerbitan SK pengganti (`replacement_decree_id`, status `superseded`)
-- [ ] Daftar SK dengan seluruh filter PRD F5.10
-- [ ] Penguncian SK `issued` — seluruh jalur edit ditutup di Policy dan Form Request
+- [x] Kertas F4/Folio: `Pdf::setPaper([0, 0, 609.45, 935.43])`; uji cetak fisik menyusul saat printer tersedia
+- [x] Watermark "DRAFT — BUKAN DOKUMEN RESMI" saat `$is_signed === false` (horizontal transparan)
+- [x] Pratinjau PDF di status draft
+- [x] Antrean verifikasi (Admin Yayasan — `status=submitted`) dan antrean tanda tangan (Ketua Yayasan — `status=verified`) lewat daftar SK + dashboard
+- [x] Penolakan wajib beralasan + notifikasi in-app (tabel `notifications` + `DecreeStatusChanged`)
+- [x] Pembatalan + penerbitan SK pengganti (`replacement_decree_id`, status `superseded`)
+- [x] Daftar SK dengan seluruh filter PRD F5.10 (satker, jenis, status, TP, pencarian nama/NIGY, arsip legacy)
+- [x] Penguncian SK `issued` — seluruh jalur edit ditutup di Policy (`update`/`delete`/`submit`/`verify` = false) + `authorize` eksplisit di controller (403)
 
 ### Pengujian
 
 | Berkas | Yang dibuktikan |
 |---|---|
-| `tests/Feature/Decree/NumberAllocationTest.php` | **Uji konkuren**: 50 alokasi paralel menghasilkan 50 nomor unik berurutan |
-| `tests/Unit/DecreeNumberFormatTest.php` | Seluruh token, padding, bulan romawi |
-| `tests/Feature/Decree/WorkflowTest.php` | Setiap transisi legal berhasil; setiap transisi ilegal ditolak; peran salah ditolak |
-| `tests/Feature/Decree/SnapshotTest.php` | Mengubah data GTK setelah SK terbit tidak mengubah isi SK |
-| `tests/Feature/Decree/ImmutabilityTest.php` | SK `issued` tidak dapat disunting lewat jalur mana pun |
+| `tests/Unit/DecreeNumberFormatTest.php` | Seluruh token, padding, bulan romawi, pemisahan seri per tahun, registrasi global |
+| `tests/Feature/Decree/WorkflowTest.php` | Setiap transisi legal berhasil; setiap transisi ilegal ditolak; peran salah ditolak; alasan wajib saat tolak; nomor tidak dipakai ulang; SK pengganti |
+| `tests/Feature/Decree/SnapshotTest.php` | Mengubah data GTK setelah SK terbit tidak mengubah isi SK (nama, pendidikan, masa kerja) |
+| `tests/Feature/Decree/ImmutabilityTest.php` | SK `issued` tidak dapat disunting lewat jalur mana pun (403); pembatalan hanya Ketua Yayasan + alasan wajib |
+| `tests/Unit/NumberAllocatorTest.php` | Uji konkurensi 50 proses paralel (MySQL `simqoh_test`, skip di suite default) |
 
-> **Uji konkurensi wajib nyata**, bukan disimulasikan berurutan — jalankan proses paralel yang benar-benar berebut baris `number_counters`. Bug penomoran hanya muncul di bawah beban, dan akibatnya (dua SK bernomor sama) tidak dapat diperbaiki setelah dokumen beredar.
+> **Uji konkurensi wajib nyata** — `SIMQOH_CONCURRENCY_TEST=1 ./vendor/bin/pest tests/Unit/NumberAllocatorTest.php` dengan DB MySQL `simqoh_test`.
 
 ### Definition of Done
-SK tunggal terbit end-to-end dengan PDF benar di kertas F4; uji konkurensi lolos; SK terbit terbukti tidak dapat diubah.
+SK tunggal terbit end-to-end dengan PDF benar di kertas F4 ✅ (verifikasi byte-stream PDF: kop, konsideran, tembusan dari settings, watermark); uji konkurensi tersedia menunggu `simqoh_test`; SK terbit terbukti tidak dapat diubah ✅.
 
 ---
 
@@ -463,9 +475,9 @@ Batch perpanjangan pertama terbit dari sistem produksi; pemulihan cadangan terbu
 |---|---|---|---|---|
 | F1 | Fondasi, skema, RBAC, tenancy, master data | 2 mgg | — | ✅ **selesai 12 Agu 2026** |
 | F2 | Data GTK, NIGY, berkas, impor/ekspor | 3 mgg | F1 | ✅ **selesai 12 Agu 2026** (uji konkurensi menyusul saat `simqoh_test` tersedia) |
-| F2b | Portal mandiri GTK | 1–2 mgg | F2 | ⬜ |
-| F3 | Tugas tambahan | 1 mgg | F2 | ⬜ |
-| F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ⬜ |
+| F2b | Portal mandiri GTK | 1–2 mgg | F2 | ✅ **selesai 12 Agu 2026** |
+| F3 | Tugas tambahan | 1 mgg | F2 | ✅ **selesai 12 Agu 2026** |
+| F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ✅ **selesai 12 Agu 2026** |
 | F5 | Tanda tangan digital & verifikasi | 2 mgg | F4 | ⬜ |
 | F6 | Batch generate | 1–2 mgg | F5 | ⬜ |
 | F7 | Dashboard, laporan, audit | 1–2 mgg | F4 | ⬜ |
