@@ -23,7 +23,22 @@
             </section>
 
             <section class="card p-6">
-                <h3 class="mb-4 text-sm font-semibold text-gray-700">Gambar Tanda Tangan Basah (Khusus Admin Yayasan)</h3>
+                <h3 class="mb-4 text-sm font-semibold text-foreground">Logo Yayasan (Kop Surat)</h3>
+                <p class="mb-3 text-xs text-slate-500">PNG/JPG, maks 2 MB. Tampil di kop surat SK.</p>
+                <form @submit.prevent="uploadLogo" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <input type="file" accept="image/png,image/jpeg" @change="(e) => { logoForm.file = e.target.files[0]; }"
+                               class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="logoForm.errors.file" class="error-text" role="alert">{{ logoForm.errors.file }}</p>
+                    </div>
+                    <button type="submit" :disabled="logoForm.processing" class="btn-secondary sm:justify-self-end">
+                        Unggah Logo
+                    </button>
+                </form>
+            </section>
+
+            <section class="card p-6">
+                <h3 class="mb-4 text-sm font-semibold text-foreground">Gambar Tanda Tangan Basah (Khusus Admin Yayasan)</h3>
                 <p class="mb-3 text-xs text-gray-500">
                     Disimpan di luar document root (izin 0400), hanya dibaca proses penandatanganan,
                     tidak pernah tampil di pratinjau draft. Konfirmasi kata sandi wajib.
@@ -115,6 +130,11 @@ function save() {
 }
 
 const signatureForm = useForm({ current_password: '', file: null });
+const logoForm = useForm({ file: null });
+
+function uploadLogo() {
+    logoForm.post('/admin/settings/logo', { preserveScroll: true, onSuccess: () => logoForm.reset() });
+}
 
 function uploadSignature() {
     signatureForm.post('/admin/settings/signature', { preserveScroll: true, onSuccess: () => signatureForm.reset() });

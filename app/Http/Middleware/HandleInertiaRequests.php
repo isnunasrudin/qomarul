@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Inertia\Middleware;
@@ -43,11 +44,27 @@ class HandleInertiaRequests extends Middleware
                     'employee_id' => $request->user()->employee_id,
                     'must_change_password' => $request->user()->must_change_password,
                 ] : null,
+                'notifications' => $request->user() ? [
+                    'unread_count' => $request->user()->unreadNotifications()->count(),
+                    'latest' => $request->user()->notifications()->limit(5)->get()->map(fn ($n) => [
+                        'id' => $n->id,
+                        'data' => $n->data,
+                        'read_at' => $n->read_at,
+                        'created_at' => $n->created_at,
+                    ]),
+                ] : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'impersonation' => fn () => $request->session()->has('impersonator_id') && $request->user() ? [
+                'active' => true,
+                'impersonator' => [
+                    'id' => (int) $request->session()->get('impersonator_id'),
+                    'name' => User::query()->whereKey($request->session()->get('impersonator_id'))->value('name') ?? 'Operator',
+                ],
+            ] : ['active' => false],
             'lang' => fn () => $this->flattenTranslations(),
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),

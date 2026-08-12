@@ -23,7 +23,8 @@ class UserController extends Controller
             'users' => User::query()
                 ->with(['workUnit', 'employee:id,id,nigy,name'])
                 ->orderBy('name')
-                ->paginate(20),
+                ->paginate(20)
+                ->through(fn (User $user) => tap($user, fn () => $user->can_impersonate = request()->user()->can('impersonate', $user))),
             'roles' => collect(UserRole::cases())->map(fn ($role) => [
                 'value' => $role->value,
                 'label' => $role->label(),
@@ -108,5 +109,26 @@ class UserController extends Controller
         $user->update(['is_active' => ! $user->is_active]);
 
         return back()->with('success', __('common.updated'));
+    }
+
+    public function toggleTwoFactor(User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        $user->update(['two_factor_enabled' => ! $user->two_factor_enabled]);
+
+        return back()->with('success', __('common.updated'));
+    }
+
+    public function resetTwoFactor(User $user): RedirectResponse
+    {
+        $this->authorize('resetTwoFactor', $user);
+
+        $user->update([
+            'two_factor_secret' => null,
+            'two_factor_enabled' => false,
+        ]);
+
+        return back()->with('success', '2FA pengguna telah direset. Pengguna perlu mengaktifkannya kembali.');
     }
 }

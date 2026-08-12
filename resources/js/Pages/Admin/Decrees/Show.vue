@@ -66,11 +66,11 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">TMT</p>
-                        <p class="text-sm text-gray-800">{{ decree.effective_date || '—' }}</p>
+                        <p class="text-sm text-gray-800">{{ formatTanggal(decree.effective_date) }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">Tanggal Penetapan</p>
-                        <p class="text-sm text-gray-800">{{ decree.issued_date || '—' }}</p>
+                        <p class="text-sm text-gray-800">{{ formatTanggal(decree.issued_date) }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">Tahun Pelajaran</p>
@@ -100,7 +100,7 @@
                             <span class="font-medium">{{ statusLabel(log.to_status) }}</span>
                             <span v-if="log.from_status" class="text-gray-400">(dari {{ statusLabel(log.from_status) }})</span>
                         </p>
-                        <p class="text-xs text-gray-400">{{ log.user?.name }} · {{ log.created_at }}</p>
+                        <p class="text-xs text-gray-400">{{ log.user?.name }} · {{ formatTanggalWaktu(log.created_at) }}</p>
                         <p v-if="log.notes" class="text-xs text-gray-500">{{ log.notes }}</p>
                     </li>
                     <li v-if="!decree.workflow_logs.length" class="text-sm text-gray-400">Belum ada transisi.</li>
@@ -129,6 +129,7 @@
 import { inject, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { formatTanggal, formatTanggalWaktu } from '../../../utils/date';
 
 const route = inject('route');
 

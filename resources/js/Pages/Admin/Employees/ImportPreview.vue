@@ -24,6 +24,9 @@
             <h3 class="mb-2 text-sm font-semibold text-gray-700">Ringkasan Data Valid</h3>
             <p class="mb-4 text-sm text-gray-600">
                 NIGY akan dihasilkan otomatis sesuai format pada Pengaturan Yayasan.
+                <span v-if="createUsers" class="font-medium text-primary-600">
+                    Akun pengguna juga akan dibuat (username = NIGY, sandi sementara acak, wajib ganti saat masuk pertama).
+                </span>
             </p>
             <div class="max-h-72 overflow-y-auto rounded-md border border-gray-100">
                 <table class="min-w-full divide-y divide-gray-100 text-sm">
@@ -40,7 +43,7 @@
                             <td class="px-3 py-2 text-gray-700">{{ row.name }}</td>
                             <td class="px-3 py-2 text-gray-700">{{ row.work_unit_id }}</td>
                             <td class="px-3 py-2 text-gray-700">{{ row.position_id }}</td>
-                            <td class="px-3 py-2 text-gray-700">{{ row.foundation_start_date }}</td>
+                            <td class="px-3 py-2 text-gray-700">{{ formatTanggal(row.foundation_start_date) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -70,10 +73,11 @@
 import { inject, ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { formatTanggal } from '../../../utils/date';
 
 const route = inject('route');
 
-defineProps(['preview']);
+defineProps(['preview', 'createUsers']);
 
 const importing = ref(false);
 

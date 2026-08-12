@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +13,9 @@ use Inertia\Response;
 
 class TwoFactorController extends Controller
 {
-    public function setup(): Response
+    public function setup(Request $request): Response
     {
-        $user = $this->pendingUser();
+        $user = $this->pendingUser($request);
 
         $secret = $user->two_factor_secret ?? app('pragmarx.google2fa')->generateSecretKey();
 
@@ -33,16 +32,16 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    public function verify(): Response
+    public function verify(Request $request): Response
     {
-        $this->pendingUser();
+        $this->pendingUser($request);
 
         return Inertia::render('Auth/TwoFactorVerify');
     }
 
     public function confirm(Request $request): RedirectResponse
     {
-        $user = $this->pendingUser();
+        $user = $this->pendingUser($request);
 
         $data = $request->validate([
             'secret' => ['required', 'string', 'size:16'],
@@ -59,6 +58,7 @@ class TwoFactorController extends Controller
 
         $user->update([
             'two_factor_secret' => $data['secret'],
+            'two_factor_enabled' => true,
         ]);
 
         return $this->finishLogin($request);
@@ -66,7 +66,7 @@ class TwoFactorController extends Controller
 
     public function challenge(Request $request): RedirectResponse
     {
-        $user = $this->pendingUser();
+        $user = $this->pendingUser($request);
 
         $data = $request->validate([
             'code' => ['required', 'string', 'size:6'],
@@ -87,6 +87,7 @@ class TwoFactorController extends Controller
     {
         $request->user()->update([
             'two_factor_secret' => null,
+            'two_factor_enabled' => false,
         ]);
 
         return back()->with('success', __('common.saved'));
@@ -94,7 +95,7 @@ class TwoFactorController extends Controller
 
     protected function finishLogin(Request $request): RedirectResponse
     {
-        $user = $this->pendingUser();
+        $user = $this->pendingUser($request);
 
         $remember = (bool) $request->session()->pull('login.remember');
         $request->session()->forget('login.pre_2fa_id');
@@ -102,23 +103,23 @@ class TwoFactorController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
+        $user->update(['last_login_at' => now()]);
+
         return redirect()->intended(route('dashboard'));
     }
 
-    protected function pendingUser(): User
+    protected function pendingUser(Request $request): User
     {
+        if ($user = $request->user()) {
+            return $user;
+        }
+
         $userId = session('login.pre_2fa_id');
 
         if (! $userId) {
             abort(403, __('common.unauthorized'));
         }
 
-        $user = User::findOrFail($userId);
-
-        if ($user->role !== UserRole::FoundationHead) {
-            abort(403, __('common.forbidden'));
-        }
-
-        return $user;
+        return User::findOrFail($userId);
     }
 }

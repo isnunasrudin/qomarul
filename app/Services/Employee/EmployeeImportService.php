@@ -3,12 +3,15 @@
 namespace App\Services\Employee;
 
 use App\Enums\Gender;
+use App\Enums\UserRole;
 use App\Models\Employee;
 use App\Models\EmploymentStatus;
 use App\Models\Position;
+use App\Models\User;
 use App\Models\WorkUnit;
 use App\Services\Nigy\NigyService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 /**
@@ -58,24 +61,45 @@ class EmployeeImportService
 
     /**
      * Simpan seluruh baris valid dalam satu transaksi (all-or-nothing).
+     * Bila $withUsers aktif, akun pengguna (username = NIGY) ikut dibuat.
      *
      * @param  array<int, array<string, mixed>>  $rows
+     * @return array{saved: int, users: array<int, array{username: string, password: string}>}
      */
-    public function import(array $rows): int
+    public function import(array $rows, bool $withUsers = false): array
     {
         $saved = 0;
+        $users = [];
 
-        DB::transaction(function () use ($rows, &$saved): void {
+        DB::transaction(function () use ($rows, $withUsers, &$saved, &$users): void {
             foreach ($rows as $row) {
                 $row['nigy'] = $this->nigyService->generateFromData($row);
 
-                Employee::create($row);
+                $employee = Employee::create($row);
 
                 $saved++;
+
+                if ($withUsers) {
+                    $password = Str::random(12);
+
+                    User::create([
+                        'name' => $employee->name,
+                        'username' => $employee->nigy,
+                        'email' => $employee->email ?? $employee->nigy.'@qomarulhidayah.sch.id',
+                        'password' => $password,
+                        'role' => UserRole::Employee,
+                        'employee_id' => $employee->id,
+                        'work_unit_id' => $employee->work_unit_id,
+                        'is_active' => true,
+                        'must_change_password' => true,
+                    ]);
+
+                    $users[] = ['username' => $employee->nigy, 'password' => $password];
+                }
             }
         });
 
-        return $saved;
+        return ['saved' => $saved, 'users' => $users];
     }
 
     /** @return array<string, array<int, string>> */

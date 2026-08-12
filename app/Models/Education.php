@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EducationLevel;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\FormatsDatesLocally;
 use Database\Factories\EducationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class Education extends Model
 {
     use Auditable;
     use BelongsToTenant;
+    use FormatsDatesLocally;
 
     /** @use HasFactory<EducationFactory> */
     use HasFactory;
@@ -47,7 +49,7 @@ class Education extends Model
     {
         return [
             'level' => EducationLevel::class,
-            'certificate_date' => 'date',
+            'certificate_date' => 'date:Y-m-d',
             'is_highest' => 'boolean',
         ];
     }

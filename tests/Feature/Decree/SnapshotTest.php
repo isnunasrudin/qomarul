@@ -46,7 +46,7 @@ it('freezes the printed values into snapshot_data at issue time', function () {
 
     $snapshot = app(DecreeSnapshotBuilder::class)->freeze($decree);
 
-    expect($snapshot->snapshot_data['name'])->toBe('Drs. Ahmad Fauzi M.Pd.');
+    expect($snapshot->snapshot_data['name'])->toBe('Drs. Ahmad Fauzi, M.Pd.');
     expect($snapshot->snapshot_data['education_level'])->toBe('S2');
     expect($snapshot->snapshot_data['major'])->toBe('Manajemen Pendidikan');
     expect($snapshot->snapshot_data['service_years'])->toBe(6);

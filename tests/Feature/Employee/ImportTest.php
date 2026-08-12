@@ -56,9 +56,9 @@ it('imports all valid rows atomically and generates NIGY', function () {
 
     $preview = app(EmployeeImportService::class)->preview($rows);
 
-    $saved = app(EmployeeImportService::class)->import($preview['valid']);
+    $result = app(EmployeeImportService::class)->import($preview['valid']);
 
-    expect($saved)->toBe(50);
+    expect($result['saved'])->toBe(50);
     expect(Employee::count())->toBe(50);
     expect(Employee::orderBy('id')->first()->nigy)->toBe('2026SMK001');
     expect(Employee::orderByDesc('id')->first()->nigy)->toBe('2026SMK050');

@@ -202,6 +202,7 @@
 import { inject, reactive, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { formatTanggal } from '../../../utils/date';
 
 const route = inject('route');
 
@@ -216,7 +217,7 @@ const filters = reactive({
 const modal = ref(null);
 
 function formatDate(value) {
-    return value ? String(value).slice(0, 10) : '—';
+    return formatTanggal(value);
 }
 
 function expiringSoon(assignment) {

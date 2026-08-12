@@ -265,6 +265,7 @@
 import { inject, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { formatTanggal } from '../../../utils/date';
 
 const route = inject('route');
 
@@ -327,9 +328,7 @@ async function showDetail(certificate) {
 }
 
 function formatTs(ts) {
-    if (!ts) return '—';
-    const d = new Date(ts * 1000);
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    return formatTanggal(ts * 1000);
 }
 
 function expiringSoon(validUntil) {

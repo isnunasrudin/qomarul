@@ -19,6 +19,7 @@
                         <th class="px-4 py-3 text-left font-medium text-gray-600">Peran</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-600">Satuan Kerja</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-600">2FA</th>
                         <th class="px-4 py-3 text-right font-medium text-gray-600">Aksi</th>
                     </tr>
                 </thead>
@@ -38,8 +39,27 @@
                                 {{ user.is_active ? 'Aktif' : 'Nonaktif' }}
                             </span>
                         </td>
+                        <td class="px-4 py-3">
+                            <span :class="user.two_factor_active ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'"
+                                  class="rounded-full px-2 py-0.5 text-xs">
+                                {{ user.two_factor_active ? '2FA Aktif' : '2FA Nonaktif' }}
+                            </span>
+                        </td>
                         <td class="px-4 py-3 text-right space-x-3">
+                            <button v-if="user.can_impersonate" type="button" class="text-purple-700 hover:underline" @click="impersonate(user)">
+                                Masuk sebagai
+                            </button>
                             <button type="button" class="text-primary-600 hover:underline" @click="openEdit(user)">Sunting</button>
+                            <button v-if="!user.two_factor_enabled" type="button" class="text-blue-700 hover:underline" @click="toggleTwoFactor(user)">
+                                Aktifkan 2FA
+                            </button>
+                            <button v-else-if="!user.two_factor_active" type="button" class="text-amber-700 hover:underline" @click="toggleTwoFactor(user)">
+                                Batal Pengaturan 2FA
+                            </button>
+                            <button v-else type="button" class="text-blue-700 hover:underline" @click="toggleTwoFactor(user)">
+                                Nonaktifkan 2FA
+                            </button>
+                            <button type="button" class="text-red-700 hover:underline" @click="resetTwoFactor(user)">Reset 2FA</button>
                             <button type="button" class="text-amber-700 hover:underline" @click="openReset(user)">Reset Sandi</button>
                             <button type="button" class="text-gray-500 hover:underline" @click="toggleActive(user)">
                                 {{ user.is_active ? 'Nonaktifkan' : 'Aktifkan' }}
@@ -182,5 +202,21 @@ function resetPassword() {
 
 function toggleActive(user) {
     useForm({}).post(`/admin/users/${user.id}/toggle-active`);
+}
+
+function toggleTwoFactor(user) {
+    useForm({}).post(`/admin/users/${user.id}/toggle-2fa`);
+}
+
+function impersonate(user) {
+    if (confirm(`Masuk sebagai ${user.name}? Gunakan "Kembali ke Akun Saya" untuk kembali.`)) {
+        useForm({}).post(`/admin/users/${user.id}/impersonate`);
+    }
+}
+
+function resetTwoFactor(user) {
+    if (confirm(`Yakin reset 2FA untuk ${user.name}? Pengguna harus mengaktifkannya kembali.`)) {
+        useForm({}).post(`/admin/users/${user.id}/reset-2fa`);
+    }
 }
 </script>

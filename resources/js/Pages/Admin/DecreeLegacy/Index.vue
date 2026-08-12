@@ -26,7 +26,7 @@
                             <p class="text-xs text-gray-400 font-mono">{{ decree.employee?.nigy }}</p>
                         </td>
                         <td class="px-4 py-3 text-gray-700">{{ decree.decree_number || '—' }}</td>
-                        <td class="px-4 py-3 text-gray-500">{{ decree.created_at }}</td>
+                        <td class="px-4 py-3 text-gray-500">{{ formatTanggalWaktu(decree.created_at) }}</td>
                         <td class="px-4 py-3 text-right space-x-3">
                             <button type="button" @click="verify(decree)"
                                     class="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
@@ -59,6 +59,7 @@
 import { inject } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { formatTanggalWaktu } from '../../../utils/date';
 
 const route = inject('route');
 

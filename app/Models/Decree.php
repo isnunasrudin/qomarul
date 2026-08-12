@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DecreeStatus;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\FormatsDatesLocally;
 use Database\Factories\DecreeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +51,7 @@ use Illuminate\Support\Carbon;
 class Decree extends Model
 {
     use BelongsToTenant;
+    use FormatsDatesLocally;
 
     /** @use HasFactory<DecreeFactory> */
     use HasFactory;
@@ -67,8 +69,8 @@ class Decree extends Model
     protected function casts(): array
     {
         return [
-            'effective_date' => 'date',
-            'issued_date' => 'date',
+            'effective_date' => 'date:Y-m-d',
+            'issued_date' => 'date:Y-m-d',
             'snapshot_data' => 'array',
             'status' => DecreeStatus::class,
             'verified_at' => 'datetime',

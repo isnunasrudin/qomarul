@@ -56,6 +56,10 @@
                     <input type="file" accept=".xlsx,.xls,.csv" @change="(e) => { importForm.file = e.target.files[0]; }"
                            class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-600 hover:file:bg-primary-100">
                     <p v-if="importForm.errors.file" class="error-text" role="alert">{{ importForm.errors.file }}</p>
+                    <label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                        <input v-model="importForm.create_users" type="checkbox" class="checkbox">
+                        Buatkan akun pengguna otomatis (username = NIGY, sandi sementara acak)
+                    </label>
                     <div class="flex justify-end gap-2">
                         <button type="button" @click="importModal = false" class="btn-secondary">Batal</button>
                         <button type="submit" :disabled="importForm.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">Pratinjau</button>
@@ -88,7 +92,10 @@
                                 {{ employee.is_active ? 'Aktif' : 'Nonaktif' }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right space-x-3">
+                            <button v-if="employee.can_impersonate" type="button" class="text-purple-700 hover:underline" @click="impersonate(employee)">
+                                Masuk sebagai
+                            </button>
                             <Link :href="route('admin.employees.show', employee.id)" class="text-primary-600 hover:underline">Buka</Link>
                         </td>
                     </tr>
@@ -132,7 +139,13 @@ const filters = reactive({
 });
 
 const importModal = ref(false);
-const importForm = useForm({ file: null });
+const importForm = useForm({ file: null, create_users: false });
+
+function impersonate(employee) {
+    if (confirm(`Masuk sebagai ${employee.name}? Gunakan "Kembali ke Akun Saya" untuk kembali.`)) {
+        useForm({}).post(`/admin/users/${employee.user.id}/impersonate`);
+    }
+}
 
 function openImport() {
     importForm.clearErrors();

@@ -4,7 +4,7 @@
 
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-800">
-                {{ isEdit ? `Sunting — ${employee.name}` : 'Tambah GTK' }}
+                {{ isEdit ? `Sunting — ${employee.full_name}` : 'Tambah GTK' }}
             </h2>
             <div v-if="isEdit" class="flex gap-2">
                 <button type="button" @click="toggleNigyEdit"
@@ -45,6 +45,11 @@
                     <input v-else v-model="form[field.key]" :type="field.type ?? 'text'"
                            class="input">
                     <p v-if="form.errors[field.key]" class="error-text" role="alert">{{ form.errors[field.key] }}</p>
+                    <div v-if="field.titleChips" class="mt-1 flex flex-wrap gap-1">
+                        <button v-for="chip in field.titleChips" :key="chip" type="button"
+                                class="rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-600 hover:bg-primary-50 hover:text-primary-700"
+                                @click="appendChip(field, chip)">{{ chip }}</button>
+                    </div>
                 </div>
                 <div class="sm:col-span-2 lg:col-span-3">
                     <label class="label">Pas Foto (JPG/PNG/WEBP, maks 2 MB, otomatis dipotong 3:4)</label>
@@ -137,6 +142,9 @@ const form = useForm({
     religion: props.employee?.religion ?? '',
     marital_status: props.employee?.marital_status ?? '',
     mother_name: props.employee?.mother_name ?? '',
+    nik: props.employee?.nik ?? '',
+    nuptk: props.employee?.nuptk ?? '',
+    nip: props.employee?.nip ?? '',
     address: props.employee?.address ?? '',
     rt: props.employee?.rt ?? '',
     rw: props.employee?.rw ?? '',
@@ -180,9 +188,9 @@ const tabs = [
 ];
 
 const personalFields = computed(() => [
-    { key: 'title_prefix', label: 'Gelar Depan' },
+    { key: 'title_prefix', label: 'Gelar Depan', titleChips: ['Drs.', 'Dr.', 'H.', 'Hj.', 'Ir.', 'Prof.', 'KH.'] },
     { key: 'name', label: 'Nama Lengkap' },
-    { key: 'title_suffix', label: 'Gelar Belakang' },
+    { key: 'title_suffix', label: 'Gelar Belakang (pisahkan dengan koma)', titleChips: ['S.Pd.', 'S.Kom.', 'S.T.', 'S.E.', 'S.Ag.', 'M.Pd.', 'M.M.', 'M.Sc.', 'M.Si.', 'M.Kom.', 'M.T.'] },
     { key: 'gender', label: 'Jenis Kelamin', type: 'select', options: props.genders ?? [] },
     { key: 'birth_place', label: 'Tempat Lahir' },
     { key: 'birth_date', label: 'Tanggal Lahir', type: 'date' },
@@ -220,7 +228,12 @@ const employmentFields = computed(() => [
 
 function submit() {
     if (isEdit.value) {
-        form.put(route('admin.employees.update', props.employee.id));
+        // PHP tidak mem-parse multipart untuk method PUT → gunakan POST khusus
+        if (form.photo instanceof File) {
+            form.post(route('admin.employees.update.post', props.employee.id));
+        } else {
+            form.put(route('admin.employees.update', props.employee.id));
+        }
     } else {
         form.post(route('admin.employees.store'));
     }
@@ -228,6 +241,12 @@ function submit() {
 
 function back() {
     window.history.length > 1 ? window.history.back() : router.get(route('admin.employees.index'));
+}
+
+function appendChip(field, chip) {
+    const current = (form[field.key] ?? '').trim();
+    const separator = field.key === 'title_suffix' ? ', ' : ' ';
+    form[field.key] = current ? current + separator + chip : chip;
 }
 
 function confirmDelete() {

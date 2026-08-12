@@ -45,11 +45,8 @@ class LoginController extends Controller
         $request->session()->put('login.pre_2fa_id', $user->id);
         $request->session()->put('login.remember', $request->boolean('remember'));
 
-        if ($user->role === UserRole::FoundationHead) {
-            if (! $user->two_factor_secret) {
-                return redirect()->route('two-factor.setup');
-            }
-
+        // 2FA efektif hanya setelah setup selesai (secret tersimpan)
+        if ($user->two_factor_active) {
             return redirect()->route('two-factor.verify');
         }
 

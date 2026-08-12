@@ -11,6 +11,7 @@ use App\Enums\Religion;
 use App\Enums\UserRole;
 use App\Exports\EmployeeExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CreateEmployeeUserRequest;
 use App\Http\Requests\Admin\EmployeeStoreRequest;
 use App\Http\Requests\Admin\EmployeeUpdateRequest;
 use App\Imports\EmployeeImport;
@@ -30,6 +31,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Maatwebsite\Excel\Facades\Excel;
@@ -42,7 +44,7 @@ class EmployeeController extends Controller
         $this->authorize('viewAny', Employee::class);
 
         $employees = Employee::query()
-            ->with(['workUnit:id,code,name', 'position:id,name', 'employmentStatus:id,name'])
+            ->with(['workUnit:id,code,name', 'position:id,name', 'employmentStatus:id,name', 'user:id,id,employee_id,role,work_unit_id,is_active'])
             ->when($request->filled('q'), function ($query) use ($request) {
                 $query->where(function ($query) use ($request) {
                     $q = $request->string('q')->trim();
@@ -60,6 +62,12 @@ class EmployeeController extends Controller
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();
+
+        $employees = $employees->through(function (Employee $employee): Employee {
+            $employee->can_impersonate = (bool) ($employee->user && request()->user()->can('impersonate', $employee->user));
+
+            return $employee;
+        });
 
         return Inertia::render('Admin/Employees/Index', [
             'employees' => $employees,
@@ -113,6 +121,7 @@ class EmployeeController extends Controller
             'employmentStatus:id,name',
             'educations',
             'documents',
+            'user:id,id,username,email,is_active',
         ]);
 
         $employee->documents->each(function (Document $document): void {
@@ -137,6 +146,7 @@ class EmployeeController extends Controller
                 'update' => request()->user()->can('update', $employee),
                 'updateNigy' => request()->user()->can('updateNigy', $employee),
                 'delete' => request()->user()->can('delete', $employee),
+                'createUser' => request()->user()->can('createUser', $employee),
             ],
             'documentCategories' => collect(DocumentCategory::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
             'educationLevels' => collect(EducationLevel::cases())->map(fn ($l) => ['value' => $l->value, 'label' => $l->label()]),
@@ -228,9 +238,11 @@ class EmployeeController extends Controller
         $preview = app(EmployeeImportService::class)->preview($rows);
 
         $request->session()->put('import.preview', $preview['valid']);
+        $request->session()->put('import.create_users', $request->boolean('create_users'));
 
         return Inertia::render('Admin/Employees/ImportPreview', [
             'preview' => $preview,
+            'createUsers' => $request->boolean('create_users'),
         ]);
     }
 
@@ -239,15 +251,26 @@ class EmployeeController extends Controller
         $this->authorize('create', Employee::class);
 
         $rows = $request->session()->pull('import.preview', []);
+        $withUsers = (bool) $request->session()->pull('import.create_users', false);
 
         if (! $rows) {
             return back()->with('error', 'Sesi pratinjau impor sudah kedaluwarsa. Unggah ulang berkas Anda.');
         }
 
-        $saved = app(EmployeeImportService::class)->import($rows);
+        $result = app(EmployeeImportService::class)->import($rows, $withUsers);
+
+        $message = "Impor selesai: {$result['saved']} GTK tersimpan.";
+
+        if ($result['users']) {
+            $credentials = collect($result['users'])
+                ->map(fn ($u) => $u['username'].' / '.$u['password'])
+                ->implode(' · ');
+
+            $message .= ' Akun pengguna dibuat (username / sandi sementara): '.$credentials;
+        }
 
         return redirect()->route('admin.employees.index')
-            ->with('success', "Impor selesai: {$saved} GTK tersimpan.");
+            ->with('success', $message);
     }
 
     public function export(Request $request): BinaryFileResponse
@@ -260,6 +283,30 @@ class EmployeeController extends Controller
             new EmployeeExport($request, $template),
             $template ? 'template-import-gtk.xlsx' : 'daftar-gtk.xlsx',
         );
+    }
+
+    public function createUser(CreateEmployeeUserRequest $request, Employee $employee): RedirectResponse
+    {
+        $this->authorize('createUser', $employee);
+
+        $username = $request->string('username')->trim()->toString();
+        $email = $request->string('email')->trim()->toString();
+        $password = $request->filled('password') ? $request->string('password')->toString() : Str::random(12);
+
+        $user = User::create([
+            'name' => $employee->name,
+            'username' => $username,
+            'email' => $email,
+            'password' => $password,
+            'role' => UserRole::Employee,
+            'employee_id' => $employee->id,
+            'work_unit_id' => $employee->work_unit_id,
+            'is_active' => true,
+            'must_change_password' => ! $request->filled('password'),
+        ]);
+
+        return back()->with('success',
+            "Akun pengguna dibuat — username: {$user->username}".($request->filled('password') ? '' : ", sandi sementara: {$password} (wajib diganti saat masuk pertama)"));
     }
 
     protected function lockedNigyMessage(Employee $employee): string

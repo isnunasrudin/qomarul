@@ -1,10 +1,10 @@
 <template>
     <AdminLayout>
-        <Head :title="employee.name" />
+        <Head :title="employee.full_name" />
 
         <div class="mb-4 flex items-center justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-gray-800">{{ employee.name }}</h2>
+                <h2 class="text-lg font-semibold text-gray-800">{{ employee.full_name }}</h2>
                 <p class="text-sm text-gray-500">
                     NIGY <span class="font-mono">{{ employee.nigy }}</span> ·
                     {{ employee.work_unit?.name }} · {{ employee.position?.name }} ·
@@ -19,17 +19,36 @@
             </div>
         </div>
 
-        <div class="mb-6 card p-5">
-            <div class="flex items-center justify-between">
-                <p class="text-sm font-medium text-gray-700">Kelengkapan Profil</p>
-                <p class="text-sm font-semibold text-gray-800">{{ completeness.percentage }}%</p>
+        <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="card p-5">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-700">Kelengkapan Profil</p>
+                    <p class="text-sm font-semibold text-gray-800">{{ completeness.percentage }}%</p>
+                </div>
+                <div class="mt-2 h-3 rounded bg-gray-100">
+                    <div class="h-3 rounded bg-primary-500 transition-all" :style="{ width: `${completeness.percentage}%` }"></div>
+                </div>
+                <p v-if="completeness.missing.length" class="mt-2 text-xs text-gray-500">
+                    Kurang: {{ completeness.missing.join(', ') }}
+                </p>
             </div>
-            <div class="mt-2 h-3 rounded bg-gray-100">
-                <div class="h-3 rounded bg-primary-500 transition-all" :style="{ width: `${completeness.percentage}%` }"></div>
+
+            <div class="card p-5">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-700">Akun Pengguna</p>
+                    <button v-if="!employee.user && can.createUser" type="button" @click="openCreateUser"
+                            class="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
+                        Buat Akun
+                    </button>
+                </div>
+                <p v-if="employee.user" class="mt-2 text-sm text-gray-800">
+                    <span class="font-mono">{{ employee.user.username }}</span>
+                    <span class="text-xs text-gray-500"> · {{ employee.user.email }}</span>
+                </p>
+                <p v-else class="mt-2 text-sm text-gray-500">
+                    {{ can.createUser ? 'Belum ada akun — buat agar GTK bisa masuk ke portal.' : 'Belum ada akun pengguna.' }}
+                </p>
             </div>
-            <p v-if="completeness.missing.length" class="mt-2 text-xs text-gray-500">
-                Kurang: {{ completeness.missing.join(', ') }}
-            </p>
         </div>
 
         <div class="card">
@@ -196,6 +215,33 @@
                         <button type="submit" :disabled="docForm.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">Unggah</button>
                     </div>
                 </form>
+
+                <form v-else-if="modal.kind === 'user'" @submit.prevent="createUser" class="space-y-4">
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label class="label">Nama Pengguna</label>
+                            <input v-model="userForm.username" type="text" class="input" autocomplete="off">
+                            <p v-if="userForm.errors.username" class="error-text" role="alert">{{ userForm.errors.username }}</p>
+                        </div>
+                        <div>
+                            <label class="label">Email</label>
+                            <input v-model="userForm.email" type="email" class="input">
+                            <p v-if="userForm.errors.email" class="error-text" role="alert">{{ userForm.errors.email }}</p>
+                        </div>
+                        <div>
+                            <label class="label">Kata Sandi (opsional)</label>
+                            <input v-model="userForm.password" type="text" class="input" placeholder="Kosongkan untuk otomatis">
+                            <p class="mt-1 text-xs text-gray-500">
+                                Jika dikosongkan, sandi acak dibuat dan hanya ditampilkan sekali.
+                            </p>
+                            <p v-if="userForm.errors.password" class="error-text" role="alert">{{ userForm.errors.password }}</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" @click="modal = null" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="userForm.processing" class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">Buat Akun</button>
+                    </div>
+                </form>
             </div>
         </div>
     </AdminLayout>
@@ -208,6 +254,7 @@ import AdminLayout from '../../../Layouts/AdminLayout.vue';
 
 const route = inject('route');
 import { useTranslation } from '../../../helpers/translation';
+import { formatTanggal } from '../../../utils/date';
 
 const { t } = useTranslation();
 
@@ -215,6 +262,27 @@ const props = defineProps(['employee', 'completeness', 'can', 'documentCategorie
 
 const activeTab = ref('info');
 const modal = ref(null);
+
+const userForm = useForm({
+    username: props.employee?.nigy ?? '',
+    email: props.employee?.email ?? '',
+    password: '',
+});
+
+function openCreateUser() {
+    userForm.reset();
+    userForm.username = props.employee?.nigy ?? '';
+    userForm.email = props.employee?.email ?? '';
+    userForm.clearErrors();
+    modal.value = { kind: 'user', title: 'Buat Akun Pengguna' };
+}
+
+function createUser() {
+    userForm.post(`/admin/employees/${props.employee.id}/user`, {
+        preserveScroll: true,
+        onSuccess: () => { modal.value = null; },
+    });
+}
 
 const tabs = [
     { key: 'info', label: 'Informasi' },
@@ -234,15 +302,15 @@ const infoItems = computed(() => {
         { label: 'NIK', value: e.nik },
         { label: 'NUPTK', value: e.nuptk },
         { label: 'NIP', value: e.nip },
-        { label: 'Tempat/Tanggal Lahir', value: e.birth_place ? `${e.birth_place}, ${e.birth_date}` : e.birth_date },
+        { label: 'Tempat/Tanggal Lahir', value: e.birth_place ? `${e.birth_place}, ${formatTanggal(e.birth_date)}` : formatTanggal(e.birth_date) },
         { label: 'Agama', value: e.religion },
         { label: 'Status Pernikahan', value: e.marital_status },
         { label: 'Ibu Kandung', value: e.mother_name },
         { label: 'Alamat', value: e.address },
         { label: 'Kontak', value: e.phone },
         { label: 'Email', value: e.email },
-        { label: 'TMT Yayasan', value: e.foundation_start_date },
-        { label: 'TMT Satuan Kerja', value: e.unit_start_date },
+        { label: 'TMT Yayasan', value: formatTanggal(e.foundation_start_date) },
+        { label: 'TMT Satuan Kerja', value: formatTanggal(e.unit_start_date) },
         { label: 'Mata Pelajaran', value: e.subject },
         { label: 'Bank', value: e.bank_name },
         { label: 'Nomor Rekening', value: e.bank_account_number },

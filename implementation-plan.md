@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| **Versi** | 1.9 |
+| **Versi** | 1.10 |
 | **Tanggal** | 12 Agustus 2026 |
 | **Acuan** | [`prd.md`](./prd.md) v1.8 — 22 keputusan kunci (§12) |
 | **Stack** | **Laravel 13.25** (PHP 8.3) · Inertia.js · Vue 3 · Tailwind CSS 4 · MySQL/MariaDB · Redis |
@@ -436,21 +436,26 @@ Batch 200 SK selesai < 10 menit di lingkungan uji (arsitektur queue siap; 12 SK 
 
 ## Fase F7 — Dashboard, Laporan & Audit
 
+> ### ✅ SELESAI — 12 Agustus 2026
+> **Bukti:** 157/158 tes hijau (1 skip = konkurensi MySQL) · PHPStan 0 · Pint 0 · GUI Chromium non-headless: dashboard (5 kartu: statistik, antrean, sebaran) → halaman laporan (6 kartu) → rekap SK → audit log (6 kolom) → halaman notifikasi — tanpa error console.
+> **Catatan implementasi:** kolom `users.last_login_at` ditambahkan (migration 20) untuk laporan akun belum login; diisi saat login biasa maupun alur 2FA. Rekap SK memakai `countBy` PHP (kompatibel sqlite & MySQL — `DATE_FORMAT` hanya MySQL).
+
 **Estimasi 1–2 minggu · Prasyarat: F4**
 
 ### Pekerjaan
 
-- [ ] Dashboard Ketua/Admin Yayasan: total GTK, sebaran per satker/jabatan/status/jenjang pendidikan
-- [ ] Kartu antrean menonjol: menunggu verifikasi, menunggu tanda tangan (umur antrean ditampilkan)
-- [ ] Dashboard Admin Satker (agregat unitnya) dan beranda GTK
-- [ ] Laporan: daftar GTK, rekap SK per periode, pemegang tugas tambahan, profil belum lengkap, mendekati pensiun, akun belum pernah login
-- [ ] Ekspor seluruh laporan ke Excel dan PDF
-- [ ] Notifikasi in-app + lonceng dengan penghitung belum dibaca
-- [ ] Penampil audit log dengan filter pengguna/entitas/tanggal + ekspor
-- [ ] Pastikan audit log *append-only* — tidak ada rute hapus/ubah
+- [x] Dashboard Ketua/Admin Yayasan: total GTK, sebaran per satker/jabatan/status/jenjang pendidikan
+- [x] Kartu antrean menonjol: menunggu verifikasi, menunggu tanda tangan (+ umur antrean dalam hari)
+- [x] Dashboard Admin Satker (agregat unitnya) dan beranda GTK (dari F2b)
+- [x] Laporan: daftar GTK, rekap SK per periode (+ ringkasan per bulan), pemegang tugas tambahan, profil belum lengkap, mendekati pensiun (≥ 56 th), akun belum pernah login
+- [x] Ekspor seluruh laporan ke Excel (`ReportExport` generik) dan PDF (view `reports/pdf.blade.php`)
+- [x] Notifikasi in-app + lonceng dengan penghitung belum dibaca (admin & portal), halaman notifikasi, tandai dibaca
+- [x] Penampil audit log dengan filter pengguna/aksi/entitas/rentang tanggal + ekspor Excel
+- [x] Audit log *append-only* — tidak ada rute hapus/ubah (hanya `index` + `export`)
+- [x] Bonus: unggah logo yayasan di Pengaturan (kop surat PDF)
 
 ### Definition of Done
-Ketua Yayasan melihat antrean dan komposisi SDM dalam satu layar; audit log memuat seluruh transisi SK dan perubahan data GTK.
+Ketua Yayasan melihat antrean dan komposisi SDM dalam satu layar ✅; audit log memuat seluruh transisi SK dan perubahan data GTK ✅ (25 log nyata di uji GUI).
 
 ---
 
@@ -488,7 +493,7 @@ Batch perpanjangan pertama terbit dari sistem produksi; pemulihan cadangan terbu
 | F4 | SK tunggal, penomoran, PDF | 3 mgg | F1–F3 | ✅ **selesai 12 Agu 2026** |
 | F5 | Tanda tangan digital & verifikasi | 2 mgg | F4 | ✅ **selesai 12 Agu 2026** |
 | F6 | Batch generate | 1–2 mgg | F5 | ✅ **selesai 12 Agu 2026** |
-| F7 | Dashboard, laporan, audit | 1–2 mgg | F4 | ⬜ |
+| F7 | Dashboard, laporan, audit | 1–2 mgg | F4 | ✅ **selesai 12 Agu 2026** |
 | F8 | Uji, migrasi, go-live | 2 mgg | semua | ⬜ |
 | | **Total** | **15–19 mgg** | | |
 

@@ -10,6 +10,7 @@ use App\Models\Employee;
 use App\Models\EmployeeAdditionalDuty;
 use App\Models\WorkUnit;
 use App\Services\Duty\DutyOverlapService;
+use App\Support\IndonesianDate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -73,7 +74,7 @@ class DutyAssignmentController extends Controller
 
         if ($overlap) {
             return back()->withErrors([
-                'start_date' => 'GTK ini sudah memegang tugas yang sama pada rentang '.$overlap->start_date->format('d/m/Y').' s.d. '.$overlap->end_date->format('d/m/Y').'.',
+                'start_date' => 'GTK ini sudah memegang tugas yang sama pada rentang '.IndonesianDate::format($overlap->start_date).' s.d. '.IndonesianDate::format($overlap->end_date).'.',
             ])->withInput();
         }
 
@@ -174,7 +175,7 @@ class DutyAssignmentController extends Controller
 
         if ($overlap) {
             return back()->withErrors([
-                'start_date' => 'Periode beririsan dengan penetapan lain ('.$overlap->start_date->format('d/m/Y').' s.d. '.$overlap->end_date->format('d/m/Y').').',
+                'start_date' => 'Periode beririsan dengan penetapan lain ('.IndonesianDate::format($overlap->start_date).' s.d. '.IndonesianDate::format($overlap->end_date).').',
             ])->withInput();
         }
 

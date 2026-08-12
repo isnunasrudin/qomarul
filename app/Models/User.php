@@ -24,6 +24,9 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property bool $must_change_password
  * @property string|null $two_factor_secret
+ * @property bool $two_factor_enabled
+ * @property bool $can_impersonate
+ * @property Carbon|null $last_login_at
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -41,6 +44,8 @@ use Illuminate\Support\Carbon;
     'is_active',
     'must_change_password',
     'two_factor_secret',
+    'two_factor_enabled',
+    'last_login_at',
 ])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret'])]
 class User extends Authenticatable
@@ -48,6 +53,9 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    /** @var list<string> */
+    protected $appends = ['two_factor_active'];
 
     protected function casts(): array
     {
@@ -57,7 +65,14 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
+            'two_factor_enabled' => 'boolean',
         ];
+    }
+
+    /** 2FA benar-benar aktif hanya bila setup selesai (secret tersimpan). */
+    public function getTwoFactorActiveAttribute(): bool
+    {
+        return $this->two_factor_enabled && (bool) $this->two_factor_secret;
     }
 
     /** @return BelongsTo<WorkUnit, $this> */

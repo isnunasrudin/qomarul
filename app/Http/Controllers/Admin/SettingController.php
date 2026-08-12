@@ -89,6 +89,31 @@ class SettingController extends Controller
         return back()->with('success', 'Gambar tanda tangan diganti dan disimpan secara privat (izin 0400).');
     }
 
+    /**
+     * Unggah logo yayasan (kop surat).
+     */
+    public function updateLogo(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Setting::class);
+
+        $data = $request->validate([
+            'file' => ['required', 'file', 'mimes:png,jpg,jpeg', 'max:2048'],
+        ]);
+
+        $file = $request->file('file');
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->buffer($file->getContent());
+
+        if (! in_array($mime, ['image/png', 'image/jpeg'], true)) {
+            return back()->withErrors(['file' => 'Logo harus PNG atau JPG.'])->withInput();
+        }
+
+        $path = $file->store('logo', 'public');
+
+        Setting::set('foundation.logo_path', 'storage/'.$path, 'foundation');
+
+        return back()->with('success', 'Logo yayasan diperbarui.');
+    }
+
     /** @return array<string, mixed> */
     protected function defaults(string $group): array
     {

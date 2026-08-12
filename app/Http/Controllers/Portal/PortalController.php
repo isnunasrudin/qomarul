@@ -76,8 +76,50 @@ class PortalController extends Controller
                 ->where('status', 'active')
                 ->with('additionalDuty:id,name')
                 ->get(),
+        ]);
+    }
+
+    public function profile(): Response
+    {
+        $employee = $this->ownEmployee();
+
+        $employee->load([
+            'workUnit:id,name',
+            'position:id,name',
+            'employmentStatus:id,name',
+            'educations',
+        ]);
+
+        return Inertia::render('Portal/Profile', [
+            'employee' => $employee,
+            'completeness' => app(ProfileCompletenessService::class)->evaluate($employee),
+        ]);
+    }
+
+    public function documents(): Response
+    {
+        $employee = $this->ownEmployee();
+
+        $employee->load('documents');
+
+        $employee->documents->each(function (Document $document): void {
+            $document->signed_url = URL::temporarySignedRoute(
+                'portal.documents.download',
+                now()->addHour(),
+                ['document' => $document->id],
+            );
+        });
+
+        return Inertia::render('Portal/Documents', [
+            'employee' => $employee,
+            'completeness' => app(ProfileCompletenessService::class)->evaluate($employee),
             'documentCategories' => collect(DocumentCategory::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
         ]);
+    }
+
+    public function legacy(): Response
+    {
+        return Inertia::render('Portal/Legacy');
     }
 
     public function updateProfile(UpdateOwnProfileRequest $request): RedirectResponse

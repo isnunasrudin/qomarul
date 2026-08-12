@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Enums\Gender;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\FormatsDatesLocally;
+use App\Support\TitleFormatter;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -50,6 +52,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $unit_start_date
  * @property string $subject
  * @property bool $is_active
+ * @property bool $can_impersonate
  * @property Carbon|null $termination_date
  * @property string $termination_reason
  *
@@ -59,6 +62,7 @@ class Employee extends Model
 {
     use Auditable;
     use BelongsToTenant;
+    use FormatsDatesLocally;
 
     /** @use HasFactory<EmployeeFactory> */
     use HasFactory;
@@ -76,13 +80,15 @@ class Employee extends Model
         'is_active', 'termination_date', 'termination_reason',
     ];
 
+    protected $appends = ['full_name'];
+
     protected function casts(): array
     {
         return [
-            'birth_date' => 'date',
-            'foundation_start_date' => 'date',
-            'unit_start_date' => 'date',
-            'termination_date' => 'date',
+            'birth_date' => 'date:Y-m-d',
+            'foundation_start_date' => 'date:Y-m-d',
+            'unit_start_date' => 'date:Y-m-d',
+            'termination_date' => 'date:Y-m-d',
             'is_active' => 'boolean',
         ];
     }
@@ -142,6 +148,24 @@ class Employee extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim(trim((string) $this->title_prefix).' '.$this->name.' '.trim((string) $this->title_suffix));
+        $prefix = trim((string) $this->title_prefix);
+        $suffix = trim((string) $this->title_suffix);
+        $full = trim($prefix.' '.$this->name);
+
+        if ($suffix !== '') {
+            $full .= ', '.$suffix;
+        }
+
+        return $full;
+    }
+
+    public function setTitlePrefixAttribute(?string $value): void
+    {
+        $this->attributes['title_prefix'] = TitleFormatter::normalizePrefix($value);
+    }
+
+    public function setTitleSuffixAttribute(?string $value): void
+    {
+        $this->attributes['title_suffix'] = TitleFormatter::normalizeSuffix($value);
     }
 }

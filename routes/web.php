@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdditionalDutyController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\DecreeController;
@@ -11,16 +12,21 @@ use App\Http\Controllers\Admin\EducationController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\EmploymentStatusController;
 use App\Http\Controllers\Admin\LegacyDecreeController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\PositionController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkUnitController;
+use App\Http\Controllers\Auth\ImpersonateController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordChangeController;
+use App\Http\Controllers\Auth\SocialiteController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Public\VerificationController;
+use App\Http\Controllers\Security\SecurityController;
 use Illuminate\Support\Facades\Route;
 
 // Verifikasi publik — tanpa auth (PRD F7.7–F7.11)
@@ -38,11 +44,24 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:5,1')
         ->name('login.attempt');
 
-    Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('two-factor.setup');
+    Route::get('/auth/google', [SocialiteController::class, 'redirect'])
+        ->name('auth.google');
+    Route::get('/login/google/callback', [SocialiteController::class, 'callback'])
+        ->middleware('throttle:10,1')
+        ->name('auth.google.callback');
+});
+
+// Setup & konfirmasi 2FA berlaku untuk alur login (guest) maupun pengaturan mandiri (terautentikasi)
+Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('two-factor.setup');
+Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm'])
+    ->middleware('throttle:5,1')
+    ->name('two-factor.confirm');
+Route::post('/2fa/disable', [TwoFactorController::class, 'disable'])
+    ->middleware('auth')
+    ->name('two-factor.disable');
+
+Route::middleware('guest')->group(function () {
     Route::get('/2fa/verify', [TwoFactorController::class, 'verify'])->name('two-factor.verify');
-    Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm'])
-        ->middleware('throttle:5,1')
-        ->name('two-factor.confirm');
     Route::post('/2fa/challenge', [TwoFactorController::class, 'challenge'])
         ->middleware('throttle:5,1')
         ->name('two-factor.challenge');
@@ -50,6 +69,13 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    Route::post('/impersonate/stop', [ImpersonateController::class, 'stop'])->name('impersonate.stop');
+
+    Route::get('/security', [SecurityController::class, 'index'])->name('security');
+    Route::post('/security/2fa/enable', [SecurityController::class, 'enableTwoFactor'])->name('security.2fa.enable');
+    Route::post('/security/2fa/disable', [SecurityController::class, 'disableTwoFactor'])->name('security.2fa.disable');
+    Route::post('/security/password', [SecurityController::class, 'changePassword'])->name('security.password');
 
     Route::middleware('password.changed')->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
@@ -63,19 +89,43 @@ Route::middleware('auth')->group(function () {
             Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
             Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
             Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+            Route::post('users/{user}/toggle-2fa', [UserController::class, 'toggleTwoFactor'])->name('users.toggle-2fa');
+            Route::post('users/{user}/reset-2fa', [UserController::class, 'resetTwoFactor'])->name('users.reset-2fa');
 
             Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
             Route::post('settings/signature', [SettingController::class, 'updateSignature'])->name('settings.signature');
+            Route::post('settings/logo', [SettingController::class, 'updateLogo'])->name('settings.logo');
 
             Route::get('certificates', [CertificateController::class, 'index'])->name('certificates.index');
             Route::post('certificates', [CertificateController::class, 'store'])->name('certificates.store');
             Route::post('certificates/generate', [CertificateController::class, 'generate'])->name('certificates.generate');
             Route::get('certificates/{certificate}/detail', [CertificateController::class, 'detail'])->name('certificates.detail');
+
+            Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+            Route::get('reports/employees', [ReportController::class, 'employees'])->name('reports.employees');
+            Route::get('reports/decrees', [ReportController::class, 'decrees'])->name('reports.decrees');
+            Route::get('reports/duties', [ReportController::class, 'duties'])->name('reports.duties');
+            Route::get('reports/incomplete', [ReportController::class, 'incomplete'])->name('reports.incomplete');
+            Route::get('reports/retiring', [ReportController::class, 'retiring'])->name('reports.retiring');
+            Route::get('reports/never-login', [ReportController::class, 'neverLogin'])->name('reports.never-login');
+            Route::get('reports/{report}/export', [ReportController::class, 'export'])->name('reports.export');
+            Route::get('reports/{report}/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
+
+            Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+            Route::get('audit-logs/export', [AuditLogController::class, 'export'])->name('audit-logs.export');
+        });
+
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+            Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+            Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
         });
 
         // Data GTK — Ketua Yayasan (baca), Admin Yayasan, Admin Satker
         Route::middleware('role:foundation_head,foundation_admin,unit_admin')->prefix('admin')->name('admin.')->group(function () {
+            Route::post('users/{user}/impersonate', [ImpersonateController::class, 'start'])->name('users.impersonate');
+
             Route::get('employees', [EmployeeController::class, 'index'])->name('employees.index');
             Route::get('employees/create', [EmployeeController::class, 'create'])->name('employees.create');
             Route::post('employees', [EmployeeController::class, 'store'])->name('employees.store');
@@ -85,6 +135,8 @@ Route::middleware('auth')->group(function () {
             Route::get('employees/{employee}', [EmployeeController::class, 'show'])->name('employees.show');
             Route::get('employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
             Route::put('employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
+            Route::post('employees/{employee}/update', [EmployeeController::class, 'update'])->name('employees.update.post');
+            Route::post('employees/{employee}/user', [EmployeeController::class, 'createUser'])->name('employees.user.create');
             Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
             Route::post('employees/{employee}/educations', [EducationController::class, 'store'])->name('employees.educations.store');
@@ -138,6 +190,9 @@ Route::middleware('auth')->group(function () {
         // Portal mandiri GTK
         Route::middleware(['role:employee', 'password.changed'])->prefix('portal')->name('portal.')->group(function () {
             Route::get('/', [PortalController::class, 'home'])->name('home');
+            Route::get('/profile', [PortalController::class, 'profile'])->name('profile');
+            Route::get('/documents', [PortalController::class, 'documents'])->name('documents');
+            Route::get('/legacy', [PortalController::class, 'legacy'])->name('legacy');
             Route::put('/profile', [PortalController::class, 'updateProfile'])->name('profile.update');
             Route::post('/documents', [PortalController::class, 'uploadDocument'])->name('documents.store');
             Route::post('/decrees/legacy', [PortalController::class, 'uploadLegacy'])->name('decrees.legacy');

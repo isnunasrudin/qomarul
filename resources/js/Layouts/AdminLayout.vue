@@ -59,12 +59,51 @@
                     <h1 class="hidden text-[15px] font-semibold text-foreground md:block">{{ pageTitle }}</h1>
 
                     <div class="flex items-center gap-2">
-                        <span v-if="flash.success" class="badge bg-primary-50 text-primary-600">{{ flash.success }}</span>
+                        <!-- Lonceng notifikasi -->
+                        <div class="relative" ref="bellWrap">
+                            <button type="button" class="relative cursor-pointer rounded-lg p-2 text-slate-500 transition-colors hover:bg-muted hover:text-foreground" @click="toggleBell">
+                                <Bell :size="18" />
+                                <span v-if="unreadCount > 0"
+                                      class="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                                    {{ unreadCount > 9 ? '9+' : unreadCount }}
+                                </span>
+                            </button>
+
+                            <div v-if="bellOpen" class="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-border bg-surface shadow-lg">
+                                <div class="flex items-center justify-between border-b border-border px-4 py-3">
+                                    <p class="text-sm font-semibold text-foreground">Notifikasi</p>
+                                    <Link :href="route('admin.notifications.index')" class="text-xs text-primary-600 hover:underline">Lihat semua</Link>
+                                </div>
+                                <div class="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                                    <div v-for="n in latest" :key="n.id" class="px-4 py-3" :class="n.read_at ? '' : 'bg-primary-50/50'">
+                                        <p class="text-[13px] text-foreground">{{ bellMessage(n.data) }}</p>
+                                        <p class="mt-0.5 text-[11px] text-slate-400">{{ formatTanggalWaktu(n.created_at) }}</p>
+                                    </div>
+                                    <div v-if="!latest.length" class="px-4 py-8 text-center text-sm text-slate-400">Tidak ada notifikasi</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <span v-if="flash.success" class="badge bg-emerald-50 text-emerald-700">{{ flash.success }}</span>
                         <span v-if="flash.error" class="badge bg-red-50 text-red-600">{{ flash.error }}</span>
                     </div>
                 </header>
 
                 <main class="flex-1 p-4 md:p-8">
+                    <div v-if="impersonation.active" class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+                        <div class="flex items-center gap-2 text-sm text-amber-800">
+                            <UserCog :size="16" />
+                            <span>
+                                Anda sedang masuk sebagai
+                                <strong>{{ auth.user?.name }}</strong>
+                                (atas nama {{ impersonation.impersonator?.name }}).
+                            </span>
+                        </div>
+                        <button type="button" @click="stopImpersonation"
+                                class="rounded-md border border-amber-400 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100">
+                            Kembali ke Akun Saya
+                        </button>
+                    </div>
                     <slot />
                 </main>
             </div>
@@ -108,16 +147,48 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import { Building2, FileText, Files, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Users, UserCog, GraduationCap, Briefcase, ListChecks, ClipboardCheck, X, Layers, ScrollText } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { BarChart3, Bell, Building2, FileText, Files, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Users, UserCog, GraduationCap, Briefcase, ListChecks, ClipboardCheck, X, Layers, ScrollText, FolderOpen, Archive } from 'lucide-vue-next';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { useTranslation } from '../helpers/translation';
+import { formatTanggalWaktu } from '../utils/date';
 
 const { t } = useTranslation();
 const page = usePage();
 const auth = computed(() => page.props.auth || {});
 const flash = computed(() => page.props.flash || {});
 const mobileOpen = ref(false);
+const bellOpen = ref(false);
+const bellWrap = ref(null);
+
+const unreadCount = computed(() => auth.value.notifications?.unread_count ?? 0);
+const latest = computed(() => auth.value.notifications?.latest ?? []);
+const impersonation = computed(() => page.props.impersonation ?? { active: false });
+
+function stopImpersonation() {
+    router.post('/impersonate/stop');
+}
+
+const bellLabels = { submitted: 'SK diajukan', verified: 'SK diverifikasi', rejected: 'SK ditolak', issued: 'SK diterbitkan' };
+
+function bellMessage(data) {
+    const status = bellLabels[data?.to_status] ?? data?.to_status ?? '';
+    const employee = data?.employee_name ? ` — ${data.employee_name}` : '';
+    return `${status}${employee}`;
+}
+
+function toggleBell() {
+    bellOpen.value = !bellOpen.value;
+}
+
+function onClickOutside(event) {
+    if (bellWrap.value && !bellWrap.value.contains(event.target)) {
+        bellOpen.value = false;
+    }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside));
+onUnmounted(() => document.removeEventListener('click', onClickOutside));
 
 const roleLabels = {
     foundation_head: 'Ketua Yayasan',
@@ -140,6 +211,24 @@ const menuGroups = computed(() => {
         label: 'Utama',
         items: [{ label: 'Dasbor', href: '/', icon: LayoutDashboard }],
     });
+
+    groups.push({
+        label: 'Akun',
+        items: [{ label: 'Keamanan', href: '/security', icon: ShieldCheck }],
+    });
+
+    if (role === 'employee') {
+        groups.push({
+            label: 'Portal GTK',
+            items: [
+                { label: 'Beranda GTK', href: '/portal', icon: LayoutDashboard },
+                { label: 'Data Pribadi', href: '/portal/profile', icon: UserCog },
+                { label: 'Berkas Kepegawaian', href: '/portal/documents', icon: FolderOpen },
+                { label: 'Arsip SK Lama', href: '/portal/legacy', icon: Archive },
+                { label: 'Notifikasi', href: '/admin/notifications', icon: Bell },
+            ],
+        });
+    }
 
     if (role === 'foundation_head' || role === 'foundation_admin' || role === 'unit_admin') {
         groups.push({
@@ -169,6 +258,14 @@ const menuGroups = computed(() => {
                 { label: 'Status Kepegawaian', href: '/admin/employment-statuses', icon: ListChecks },
                 { label: 'Referensi Tugas Tambahan', href: '/admin/additional-duties', icon: Layers },
                 { label: 'Jenis SK', href: '/admin/decree-types', icon: FileText },
+            ],
+        });
+
+        groups.push({
+            label: 'Laporan & Audit',
+            items: [
+                { label: 'Laporan', href: '/admin/reports', icon: BarChart3 },
+                { label: 'Audit Log', href: '/admin/audit-logs', icon: ScrollText },
             ],
         });
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DecreeBatchStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\FormatsDatesLocally;
 use Database\Factories\DecreeBatchFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +31,7 @@ use Illuminate\Support\Carbon;
 class DecreeBatch extends Model
 {
     use Auditable;
+    use FormatsDatesLocally;
 
     /** @use HasFactory<DecreeBatchFactory> */
     use HasFactory;
@@ -42,8 +44,8 @@ class DecreeBatch extends Model
     protected function casts(): array
     {
         return [
-            'effective_date' => 'date',
-            'issued_date' => 'date',
+            'effective_date' => 'date:Y-m-d',
+            'issued_date' => 'date:Y-m-d',
             'signed_at' => 'datetime',
             'status' => DecreeBatchStatus::class,
         ];

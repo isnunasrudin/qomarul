@@ -38,4 +38,21 @@ class EmployeePolicy
     {
         return $user->hasRole(UserRole::FoundationAdmin);
     }
+
+    /**
+     * Membuatkan akun pengguna untuk GTK:
+     * operator yayasan → semua GTK; operator satker → GTK satker sendiri.
+     */
+    public function createUser(User $user, Employee $employee): bool
+    {
+        if ($employee->user) {
+            return false;
+        }
+
+        if ($user->hasRole(UserRole::FoundationHead, UserRole::FoundationAdmin)) {
+            return true;
+        }
+
+        return $user->hasRole(UserRole::UnitAdmin) && $employee->work_unit_id === $user->work_unit_id;
+    }
 }
