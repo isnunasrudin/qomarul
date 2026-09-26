@@ -82,6 +82,7 @@ class BatchController extends Controller
             'academic_year' => ['required', 'string', 'max:9'],
             'effective_date' => ['required', 'date'],
             'issued_date' => ['required', 'date'],
+            'issued_date_hijri' => ['nullable', 'string', 'max:50'],
             'issued_place' => ['nullable', 'string', 'max:255'],
             'appointed_as' => ['nullable', 'string', 'max:255'],
             'employee_ids' => ['required', 'array', 'max:500'],

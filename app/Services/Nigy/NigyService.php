@@ -4,15 +4,20 @@ namespace App\Services\Nigy;
 
 use App\Models\Decree;
 use App\Models\Employee;
+use App\Models\EmploymentStatus;
 use App\Models\Setting;
 use App\Models\WorkUnit;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * Aturan NIGY terpusat (PRD F3.2a–F3.2g).
  */
 class NigyService
 {
+    /** Batas percobaan bila NIGY hasil generate ternyata sudah dipakai. */
+    private const MAX_ATTEMPTS = 50;
+
     public function __construct(private readonly NigyGenerator $generator) {}
 
     /**
@@ -21,17 +26,12 @@ class NigyService
      */
     public function generate(Employee $employee): string
     {
-        $workUnit = $employee->workUnit;
-
-        $sequence = $this->generator->nextSequence($workUnit->code, (int) $employee->foundation_start_date?->year);
-
-        return $this->generator->render(
-            format: (string) Setting::get('nigy.format', '{tahun_masuk}{kode_satker}{urut}'),
-            padding: (int) Setting::get('nigy.padding', 3),
-            workUnitCode: $workUnit->code,
-            workUnitLevel: $workUnit->level->value,
-            foundationStartDate: $employee->foundation_start_date,
-            sequence: $sequence,
+        return $this->allocate(
+            $employee->workUnit,
+            $employee->foundation_start_date,
+            $employee->birth_date,
+            (int) $employee->employment_status_id,
+            $employee->employmentStatus?->code,
         );
     }
 
@@ -46,16 +46,58 @@ class NigyService
         $workUnit = WorkUnit::findOrFail($data['work_unit_id']);
 
         $foundationStartDate = isset($data['foundation_start_date']) ? Carbon::parse($data['foundation_start_date']) : null;
+        $birthDate = ! empty($data['birth_date']) ? Carbon::parse($data['birth_date']) : null;
+        $statusId = isset($data['employment_status_id']) ? (int) $data['employment_status_id'] : null;
 
-        $sequence = $this->generator->nextSequence($workUnit->code, (int) $foundationStartDate?->year);
+        return $this->allocate(
+            $workUnit,
+            $foundationStartDate,
+            $birthDate,
+            $statusId,
+            $statusId !== null ? EmploymentStatus::find($statusId)?->code : null,
+        );
+    }
 
-        return $this->generator->render(
-            format: (string) Setting::get('nigy.format', '{tahun_masuk}{kode_satker}{urut}'),
-            padding: (int) Setting::get('nigy.padding', 3),
-            workUnitCode: $workUnit->code,
-            workUnitLevel: $workUnit->level->value,
-            foundationStartDate: $foundationStartDate,
-            sequence: $sequence,
+    /**
+     * Render NIGY lalu pastikan nomornya belum dipakai.
+     *
+     * Penghitung urut bisa tertinggal dari data yang sudah ada — misalnya NIGY
+     * lama hasil migrasi atau impor yang diisi langsung tanpa lewat generator.
+     * Bila hasil render ternyata sudah dipakai, nomor berikutnya diambil alih
+     * daripada membiarkan galat unique muncul sebagai 500.
+     */
+    protected function allocate(
+        WorkUnit $workUnit,
+        ?Carbon $foundationStartDate,
+        ?Carbon $birthDate,
+        ?int $employmentStatusId,
+        ?string $employmentStatusCode,
+    ): string {
+        $format = (string) Setting::get('nigy.format', '{tahun_masuk}{kode_satker}{urut}');
+        $padding = (int) Setting::get('nigy.padding', 3);
+        $year = $this->generator->yearOf($foundationStartDate);
+
+        for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
+            $nigy = $this->generator->render(
+                format: $format,
+                padding: $padding,
+                workUnitCode: $workUnit->code,
+                workUnitLevel: $workUnit->level->value,
+                foundationStartDate: $foundationStartDate,
+                sequence: $this->generator->nextSequence($workUnit->code, $year),
+                birthDate: $birthDate,
+                employmentStatusId: $employmentStatusId,
+                employmentStatusCode: $employmentStatusCode,
+            );
+
+            if (! Employee::where('nigy', $nigy)->exists()) {
+                return $nigy;
+            }
+        }
+
+        throw new RuntimeException(
+            'Tidak dapat mengalokasikan NIGY unik setelah '.self::MAX_ATTEMPTS.' percobaan. '.
+            'Periksa format NIGY di Pengaturan atau selaraskan penghitung nomornya.',
         );
     }
 

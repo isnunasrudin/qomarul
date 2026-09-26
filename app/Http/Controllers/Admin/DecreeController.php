@@ -65,10 +65,50 @@ class DecreeController extends Controller
     {
         $this->authorize('create', Decree::class);
 
-        return Inertia::render('Admin/Decrees/Form', [
+        return Inertia::render('Admin/Decrees/Form', array_merge($this->formOptions(), [
+            'decree' => null,
             'employee' => $request->filled('employee_id')
                 ? Employee::query()->with(['workUnit:id,code,name', 'position:id,name'])->findOrFail($request->integer('employee_id'))
                 : null,
+        ]));
+    }
+
+    /**
+     * Form sunting draft SK. Hanya draft — dijaga DecreePolicy::update().
+     */
+    public function edit(Decree $decree): Response
+    {
+        $this->authorize('update', $decree);
+
+        return Inertia::render('Admin/Decrees/Form', array_merge($this->formOptions(), [
+            'employee' => null,
+            // Tanggal diformat eksplisit: `$decree->only()` mengembalikan Carbon
+            // mentah yang menyerialkan sebagai ISO UTC (bergeser sehari) dan tidak
+            // cocok untuk <input type="date">.
+            'decree' => [
+                'id' => $decree->id,
+                'employee_id' => $decree->employee_id,
+                'decree_type_id' => $decree->decree_type_id,
+                'work_unit_id' => $decree->work_unit_id,
+                'academic_year' => $decree->academic_year,
+                'effective_date' => $decree->effective_date?->format('Y-m-d'),
+                'issued_date' => $decree->issued_date?->format('Y-m-d'),
+                'issued_date_hijri' => $decree->issued_date_hijri,
+                'issued_place' => $decree->issued_place,
+                'appointed_as' => $decree->appointed_as,
+                'position_snapshot' => $decree->position_snapshot,
+            ],
+        ]));
+    }
+
+    /**
+     * Pilihan dropdown yang dipakai bersama oleh form buat dan form sunting.
+     *
+     * @return array<string, mixed>
+     */
+    protected function formOptions(): array
+    {
+        return [
             'employees' => Employee::query()
                 ->where('is_active', true)
                 ->with('position:id,name')
@@ -77,24 +117,14 @@ class DecreeController extends Controller
                 ->get(['id', 'nigy', 'name', 'work_unit_id', 'position_id']),
             'decreeTypes' => DecreeType::query()->where('is_active', true)->orderBy('code')->get(['id', 'code', 'name']),
             'workUnits' => $this->visibleWorkUnits()->get(['id', 'code', 'name']),
-        ]);
+        ];
     }
 
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', Decree::class);
 
-        $data = $request->validate([
-            'employee_id' => ['required', 'integer', 'exists:employees,id'],
-            'decree_type_id' => ['required', 'integer', 'exists:decree_types,id'],
-            'work_unit_id' => ['required', 'integer', 'exists:work_units,id'],
-            'academic_year' => ['required', 'string', 'max:9'],
-            'effective_date' => ['required', 'date'],
-            'issued_date' => ['required', 'date'],
-            'issued_place' => ['nullable', 'string', 'max:255'],
-            'appointed_as' => ['nullable', 'string', 'max:255'],
-            'position_snapshot' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validate($this->rules());
 
         $employee = Employee::findOrFail($data['employee_id']);
 
@@ -110,6 +140,60 @@ class DecreeController extends Controller
         $decree = Decree::create($data);
 
         return redirect()->route('admin.decrees.show', $decree)->with('success', __('common.created'));
+    }
+
+    /**
+     * Simpan perubahan draft SK.
+     */
+    public function update(Request $request, Decree $decree): RedirectResponse
+    {
+        $this->authorize('update', $decree);
+
+        $data = $request->validate($this->rules());
+
+        $employee = Employee::findOrFail($data['employee_id']);
+
+        $decree->update(array_merge($data, [
+            'position_snapshot' => $data['position_snapshot'] ?: $employee->position?->name,
+            'appointed_as' => $data['appointed_as'] ?: $employee->position?->name,
+            'issued_place' => $data['issued_place'] ?: Setting::get('foundation.default_issued_place', 'Gondang'),
+        ]));
+
+        return redirect()->route('admin.decrees.show', $decree)->with('success', __('common.updated'));
+    }
+
+    /**
+     * Hapus draft SK. Draft belum punya nomor, snapshot, maupun berkas PDF,
+     * jadi cukup hapus barisnya — log alur ikut terhapus lewat cascade.
+     */
+    public function destroy(Decree $decree): RedirectResponse
+    {
+        $this->authorize('delete', $decree);
+
+        $decree->delete();
+
+        return redirect()->route('admin.decrees.index')->with('success', __('common.deleted'));
+    }
+
+    /**
+     * Aturan validasi bersama untuk membuat dan menyunting SK.
+     *
+     * @return array<string, array<int, string>>
+     */
+    protected function rules(): array
+    {
+        return [
+            'employee_id' => ['required', 'integer', 'exists:employees,id'],
+            'decree_type_id' => ['required', 'integer', 'exists:decree_types,id'],
+            'work_unit_id' => ['required', 'integer', 'exists:work_units,id'],
+            'academic_year' => ['required', 'string', 'max:9'],
+            'effective_date' => ['required', 'date'],
+            'issued_date' => ['required', 'date'],
+            'issued_date_hijri' => ['nullable', 'string', 'max:50'],
+            'issued_place' => ['nullable', 'string', 'max:255'],
+            'appointed_as' => ['nullable', 'string', 'max:255'],
+            'position_snapshot' => ['nullable', 'string', 'max:255'],
+        ];
     }
 
     public function show(Decree $decree): Response
@@ -139,6 +223,7 @@ class DecreeController extends Controller
                 'sign' => request()->user()->can('sign', $decree),
                 'cancel' => request()->user()->can('cancel', $decree),
                 'update' => request()->user()->can('update', $decree),
+                'delete' => request()->user()->can('delete', $decree),
             ],
             'downloadUrl' => $decree->status === DecreeStatus::Issued && $decree->pdf_path
                 ? URL::temporarySignedRoute(

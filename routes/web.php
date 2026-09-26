@@ -27,6 +27,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Public\VerificationController;
 use App\Http\Controllers\Security\SecurityController;
+use App\Models\Setting;
+use App\Support\QrCodePng;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Route;
 
 // Verifikasi publik — tanpa auth (PRD F7.7–F7.11)
@@ -79,6 +82,70 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('password.changed')->group(function () {
         Route::get('/', DashboardController::class)->name('dashboard');
+
+        Route::get('/sk_test', function () {
+            $foundationName = Setting::get(
+                'foundation.name',
+                'Yayasan Pondok Pesantren Qomarul Hidayah',
+            );
+
+            $data = [
+                'foundation_name' => $foundationName,
+                'foundation' => [
+                    'address' => Setting::get(
+                        'foundation.address',
+                        'Gondang - Tugu - Trenggalek - Jawa Timur',
+                    ),
+                ],
+                'foundation_logo' => Setting::get('foundation.logo_path'),
+                'is_signed' => false,
+                'signature_path' => null,
+                // QR contoh agar blok tanda tangan elektronik terlihat utuh di pratinjau.
+                'qr_data_uri' => QrCodePng::dataUri(
+                    rtrim(config('app.url'), '/').'/verifikasi/contoh-uuid-sk-test',
+                    withLogo: true,
+                ),
+                'decree_number' => '.../YPP.QH/KP.01.01/2026',
+                'consideration_recalling' => 'Undang-undang Nomor 16 Tahun 2001 tentang Yayasan.',
+                'consideration_weighing' => [
+                    'Bahwa untuk mencukupi Tenaga Pengajar / Tenaga Administrasi pada '.$foundationName.', perlu mengangkat Guru dan Tenaga Kependidikan.',
+                ],
+                'consideration_observing' => 'Kebutuhan tenaga pendidik dan kependidikan pada satuan kerja terkait.',
+                'effective_date' => '07 Juli 2026',
+                'name' => 'NAMA CONTOH',
+                'birth_place' => 'Trenggalek',
+                'birth_date' => '19 Maret 1994',
+                'education_level' => 'S1',
+                'major' => 'Pendidikan',
+                'position' => 'Guru',
+                'appointed_as' => 'Guru Tetap Yayasan',
+                'work_unit' => 'PAUD Nawa Kartika Qomarul Hidayah',
+                'foundation_start_date' => '07 Juli 2012',
+                'unit_start_date' => '07 Juli 2012',
+                'academic_year' => '2026/2027',
+                'issued_place' => 'Trenggalek',
+                'issued_date' => '10 Juli 2026',
+                'issued_date_hijri' => '25 Muharam 1448 H',
+                'chairman_position' => 'Ketua Yayasan',
+                'chairman_name' => 'Hj. ZUMROTUN NASIHAH',
+                'cc_list' => [
+                    'Kepala PAUD Nawa Kartika Qomarul Hidayah',
+                    'Arsip',
+                ],
+            ];
+
+            $pdf = Pdf::loadView('decrees.kop-yayasan', $data)->setPaper([0, 0, 609.45, 935.43], 'portrait');
+
+            $pdf->setOptions([
+                'isRemoteEnabled' => false,
+                'isHtml5ParserEnabled' => true,
+                'defaultFont' => 'Times New Roman',
+            ]);
+
+            // return view('decrees.kop-yayasan', $data);
+            return $pdf->stream('sk-test.pdf');
+
+        })->middleware('role:foundation_head,foundation_admin')->name('sk_test');
 
         Route::middleware('role:foundation_head,foundation_admin')->prefix('admin')->name('admin.')->group(function () {
             Route::resource('work-units', WorkUnitController::class)->except(['create', 'edit', 'show']);
@@ -159,6 +226,10 @@ Route::middleware('auth')->group(function () {
             Route::get('decrees', [DecreeController::class, 'index'])->name('decrees.index');
             Route::get('decrees/create', [DecreeController::class, 'create'])->name('decrees.create');
             Route::post('decrees', [DecreeController::class, 'store'])->name('decrees.store');
+            // Sunting & hapus hanya untuk draft (dijaga DecreePolicy).
+            Route::get('decrees/{decree}/edit', [DecreeController::class, 'edit'])->name('decrees.edit');
+            Route::put('decrees/{decree}', [DecreeController::class, 'update'])->name('decrees.update');
+            Route::delete('decrees/{decree}', [DecreeController::class, 'destroy'])->name('decrees.destroy');
             Route::get('decrees/{decree}', [DecreeController::class, 'show'])->name('decrees.show');
             Route::get('decrees/{decree}/preview-pdf', [DecreeController::class, 'previewPdf'])->name('decrees.preview-pdf');
             Route::post('decrees/{decree}/submit', [DecreeController::class, 'submit'])->name('decrees.submit');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\WorkUnitLevel;
+use App\Http\Controllers\Admin\Concerns\DeletesMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\AdditionalDuty;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class AdditionalDutyController extends Controller
 {
+    use DeletesMasterData;
+
     public function index(): Response
     {
         $this->authorize('viewAny', AdditionalDuty::class);
@@ -87,5 +90,12 @@ class AdditionalDutyController extends Controller
         }
 
         return $values ?: null;
+    }
+
+    public function destroy(AdditionalDuty $additionalDuty): RedirectResponse
+    {
+        $this->authorize('delete', $additionalDuty);
+
+        return $this->deleteMasterData($additionalDuty, 'Referensi tugas tambahan');
     }
 }

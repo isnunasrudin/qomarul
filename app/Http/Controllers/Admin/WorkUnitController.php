@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\WorkUnitLevel;
+use App\Http\Controllers\Admin\Concerns\DeletesMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\WorkUnit;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class WorkUnitController extends Controller
 {
+    use DeletesMasterData;
+
     public function index(): Response
     {
         $this->authorize('viewAny', WorkUnit::class);
@@ -77,5 +80,12 @@ class WorkUnitController extends Controller
         $workUnit->update($data);
 
         return back()->with('success', __('common.updated'));
+    }
+
+    public function destroy(WorkUnit $workUnit): RedirectResponse
+    {
+        $this->authorize('delete', $workUnit);
+
+        return $this->deleteMasterData($workUnit, 'Satuan kerja');
     }
 }

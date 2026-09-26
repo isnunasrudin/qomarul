@@ -70,6 +70,7 @@ class BatchDecreeService
                     'academic_year' => $params['academic_year'],
                     'effective_date' => $params['effective_date'],
                     'issued_date' => $params['issued_date'],
+                    'issued_date_hijri' => $params['issued_date_hijri'] ?? null,
                     'issued_place' => $params['issued_place'] ?? null,
                     'appointed_as' => $params['appointed_as'] ?? $employee->position?->name,
                     'position_snapshot' => $params['position_snapshot'] ?? $employee->position?->name,

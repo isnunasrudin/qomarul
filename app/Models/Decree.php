@@ -59,7 +59,7 @@ class Decree extends Model
     protected $fillable = [
         'uuid', 'decree_type_id', 'employee_id', 'work_unit_id', 'decree_batch_id',
         'decree_number', 'sequence_number', 'registration_number', 'academic_year',
-        'effective_date', 'issued_date', 'issued_place', 'appointed_as',
+        'effective_date', 'issued_date', 'issued_date_hijri', 'issued_place', 'appointed_as',
         'position_snapshot', 'snapshot_data', 'status', 'pdf_path', 'pdf_hash',
         'rejection_reason', 'cancellation_reason', 'replacement_decree_id',
         'is_legacy', 'legacy_verified_at', 'legacy_verified_by',

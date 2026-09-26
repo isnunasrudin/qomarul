@@ -50,6 +50,7 @@ class DecreeSnapshotBuilder
             'effective_date' => $effectiveDate ? IndonesianDate::format($effectiveDate) : null,
             'issued_place' => $decree->issued_place ?: Setting::get('foundation.default_issued_place', 'Gondang'),
             'issued_date' => $decree->issued_date ? IndonesianDate::format($decree->issued_date) : null,
+            'issued_date_hijri' => $decree->issued_date_hijri,
             'chairman_name' => Setting::get('foundation.chairman_name', ''),
             'chairman_position' => Setting::get('foundation.chairman_position', 'Ketua Yayasan'),
             'consideration_recalling' => $consideration->consideration_recalling,

@@ -45,6 +45,14 @@
                         <input v-model="form.issued_date" type="date"
                                class="input">
                     </div>
+                    <div>
+                        <label class="label">Tanggal Hijriah (tercetak di SK)</label>
+                        <input v-model="form.issued_date_hijri" type="text" placeholder="25 Muharam 1448 H"
+                               class="input">
+                        <p class="mt-1 text-xs text-gray-500">
+                            Otomatis dari kalender MABIMS<template v-if="hijriLoading"> (menghitung…)</template>, bisa dikoreksi.
+                        </p>
+                    </div>
                 </div>
             </section>
 
@@ -117,9 +125,10 @@
 </template>
 
 <script setup>
-import { inject, reactive } from 'vue';
+import { inject, reactive, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { hijriFromGregorian } from '../../../helpers/hijri';
 
 const route = inject('route');
 
@@ -138,10 +147,25 @@ const form = useForm({
     academic_year: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
     effective_date: '',
     issued_date: new Date().toISOString().slice(0, 10),
+    issued_date_hijri: '',
     issued_place: '',
     appointed_as: '',
     employee_ids: [],
 });
+
+const hijriLoading = ref(false);
+
+// Tanggal penetapan berubah → usulkan tanggal Hijriah kalender MABIMS untuk
+// seluruh SK dalam batch. Operator tetap bisa menimpanya.
+watch(() => form.issued_date, async (date) => {
+    hijriLoading.value = true;
+
+    try {
+        form.issued_date_hijri = await hijriFromGregorian(date);
+    } finally {
+        hijriLoading.value = false;
+    }
+}, { immediate: true });
 
 function applyFilters() {
     router.get(route('admin.batches.create'), filters, { preserveState: true, preserveScroll: true });

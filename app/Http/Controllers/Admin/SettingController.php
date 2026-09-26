@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Setting;
+use App\Services\Nigy\NigyGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +28,9 @@ class SettingController extends Controller
                 'nigy' => $this->defaults('nigy'),
             ],
             'schema' => $this->schema(),
+            // Daftar token untuk pratinjau NIGY di sisi klien, supaya peringatan
+            // token asing memakai sumber yang sama dengan validasi server.
+            'nigyTokens' => NigyGenerator::TOKENS,
         ]);
     }
 
@@ -37,12 +44,25 @@ class SettingController extends Controller
 
         $data = $request->validate($rules);
 
+        // Token format NIGY divalidasi terpisah, bukan lewat closure di schema():
+        // schema() juga dikirim ke frontend sehingga tidak boleh memuat Closure.
+        $unknownTokens = $this->unknownNigyTokens((string) data_get($data, 'nigy.format', ''));
+
+        if ($unknownTokens !== []) {
+            throw ValidationException::withMessages([
+                'nigy.format' => 'Token tidak dikenal: '.implode(', ', $unknownTokens)
+                    .'. Token yang tersedia: '.implode(' ', NigyGenerator::TOKENS),
+            ]);
+        }
+
         foreach ($this->schema() as $key => $field) {
-            if (! array_key_exists($key, $data)) {
+            // Kunci wildcard (mis. `letterhead.cc_list.*`) hanya aturan validasi
+            // anak, bukan setting tersendiri; melewatinya mencegah baris palsu.
+            if (str_contains($key, '*') || ! Arr::has($data, $key)) {
                 continue;
             }
 
-            Setting::set($key, $data[$key], $field['group']);
+            Setting::set($key, data_get($data, $key), $field['group']);
         }
 
         return back()->with('success', __('common.updated'));
@@ -137,11 +157,31 @@ class SettingController extends Controller
             ],
         ];
 
+        // Kunci di tabel `settings` memakai nama penuh ("foundation.address"),
+        // sedangkan konsumen membaca kunci pendek ("address"). Normalkan di sini
+        // agar kedua ruang kunci tidak tercampur (BUG-04).
         $stored = Setting::where('group', $group)->get()
-            ->mapWithKeys(fn (Setting $setting) => [$setting->key => $setting->value])
+            ->mapWithKeys(fn (Setting $setting) => [
+                Str::after($setting->key, $group.'.') => $setting->value,
+            ])
             ->all();
 
         return array_merge($defaults[$group], $stored);
+    }
+
+    /**
+     * Token `{...}` pada format NIGY yang tidak dikenali generator.
+     *
+     * Tanpa validasi ini, salah ketik token akan tersimpan diam-diam dan
+     * tercetak apa adanya di NIGY setiap GTK baru.
+     *
+     * @return array<int, string>
+     */
+    protected function unknownNigyTokens(string $format): array
+    {
+        preg_match_all('/\{[a-z_]+\}/', $format, $matches);
+
+        return array_values(array_unique(array_diff($matches[0], NigyGenerator::TOKENS)));
     }
 
     /** @return array<string, array<string, mixed>> */

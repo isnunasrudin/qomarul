@@ -21,6 +21,12 @@
                    class="btn-primary">
                     Unduh PDF
                 </a>
+                <a v-if="can.update" :href="route('admin.decrees.edit', decree.id)" class="btn-secondary">
+                    Ubah
+                </a>
+                <button v-if="can.delete" type="button" @click="destroy" class="btn-danger">
+                    Hapus
+                </button>
                 <button v-if="can.submit" type="button" @click="action('submit')"
                         class="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700">
                     Ajukan
@@ -136,6 +142,14 @@ const route = inject('route');
 const props = defineProps(['decree', 'can', 'downloadUrl', 'statuses']);
 
 const modal = ref(null);
+
+function destroy() {
+    if (! window.confirm('Hapus draft SK ini? Tindakan ini tidak dapat dibatalkan.')) {
+        return;
+    }
+
+    router.delete(route('admin.decrees.destroy', props.decree.id));
+}
 
 const labels = Object.fromEntries((props.statuses ?? []).map((s) => [s.value, s.label]));
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\DeletesMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\EmploymentStatus;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,8 @@ use Inertia\Response;
 
 class EmploymentStatusController extends Controller
 {
+    use DeletesMasterData;
+
     public function index(): Response
     {
         $this->authorize('viewAny', EmploymentStatus::class);
@@ -56,5 +59,12 @@ class EmploymentStatusController extends Controller
         $employmentStatus->update($data);
 
         return back()->with('success', __('common.updated'));
+    }
+
+    public function destroy(EmploymentStatus $employmentStatus): RedirectResponse
+    {
+        $this->authorize('delete', $employmentStatus);
+
+        return $this->deleteMasterData($employmentStatus, 'Status kepegawaian');
     }
 }

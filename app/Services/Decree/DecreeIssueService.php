@@ -33,9 +33,9 @@ class DecreeIssueService
             $decree = $this->snapshotBuilder->freeze($decree);
         }
 
-        // QR verifikasi → data URI PNG
+        // QR verifikasi → data URI PNG (dengan logo yayasan di tengah)
         $verificationUrl = rtrim(config('app.url'), '/').'/verifikasi/'.$decree->uuid;
-        $qrDataUri = QrCodePng::dataUri($verificationUrl);
+        $qrDataUri = QrCodePng::dataUri($verificationUrl, withLogo: true);
 
         // render PDF
         $pdf = $this->pdfRenderer->render($decree, qrDataUri: $qrDataUri);

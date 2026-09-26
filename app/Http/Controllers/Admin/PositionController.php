@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\PositionGroup;
+use App\Http\Controllers\Admin\Concerns\DeletesMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\Position;
 use Illuminate\Http\RedirectResponse;
@@ -13,6 +14,8 @@ use Inertia\Response;
 
 class PositionController extends Controller
 {
+    use DeletesMasterData;
+
     public function index(): Response
     {
         $this->authorize('viewAny', Position::class);
@@ -64,5 +67,12 @@ class PositionController extends Controller
         $position->update($data);
 
         return back()->with('success', __('common.updated'));
+    }
+
+    public function destroy(Position $position): RedirectResponse
+    {
+        $this->authorize('delete', $position);
+
+        return $this->deleteMasterData($position, 'Jabatan');
     }
 }

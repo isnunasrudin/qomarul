@@ -1,9 +1,9 @@
 <template>
     <AdminLayout>
-        <Head :title="'Buat SK'" />
+        <Head :title="isEdit ? 'Ubah SK' : 'Buat SK'" />
 
         <div class="mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Buat Surat Keputusan</h2>
+            <h2 class="text-lg font-semibold text-gray-800">{{ isEdit ? 'Ubah Draft SK' : 'Buat Surat Keputusan' }}</h2>
             <p class="text-sm text-gray-500">Field otomatis terisi dari data GTK dan dapat ditimpa manual.</p>
         </div>
 
@@ -44,6 +44,17 @@
                     <input v-model="form.issued_date" type="date" class="input">
                 </div>
             </div>
+            <div>
+                <label class="label">Tanggal Hijriah (tercetak di SK)</label>
+                <input v-model="form.issued_date_hijri" type="text" class="input"
+                       placeholder="25 Muharam 1448 H">
+                <p class="mt-1 text-xs text-gray-500">
+                    Terisi otomatis dari kalender MABIMS (Kemenag RI) mengikuti Tanggal Penetapan.
+                    <template v-if="hijriLoading"> Menghitung…</template>
+                    Koreksi bila sidang isbat menetapkan tanggal yang berbeda.
+                </p>
+                <p v-if="form.errors.issued_date_hijri" class="error-text" role="alert">{{ form.errors.issued_date_hijri }}</p>
+            </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label class="label">TMT (Terhitung Mulai Tanggal)</label>
@@ -65,9 +76,10 @@
                        class="input">
             </div>
             <div class="flex justify-end gap-2 pt-2">
+                <button v-if="isEdit" type="button" @click="destroy" class="btn-danger mr-auto">Hapus Draft</button>
                 <button type="button" @click="back" class="btn-secondary">Kembali</button>
                 <button type="submit" :disabled="form.processing" class="btn-primary disabled:opacity-50">
-                    Simpan Draft SK
+                    {{ isEdit ? 'Simpan Perubahan' : 'Simpan Draft SK' }}
                 </button>
             </div>
         </form>
@@ -75,25 +87,45 @@
 </template>
 
 <script setup>
-import { inject, computed, watch } from 'vue';
+import { computed, inject, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
+import { hijriFromGregorian } from '../../../helpers/hijri';
 
 const route = inject('route');
 
-const props = defineProps(['employee', 'decreeTypes', 'workUnits', 'employees']);
+const props = defineProps(['employee', 'decree', 'decreeTypes', 'workUnits', 'employees']);
+
+const isEdit = computed(() => Boolean(props.decree?.id));
 
 const form = useForm({
-    employee_id: props.employee?.id ?? '',
-    decree_type_id: '',
-    work_unit_id: props.employee?.work_unit_id ?? '',
-    academic_year: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
-    issued_date: new Date().toISOString().slice(0, 10),
-    effective_date: '',
-    issued_place: '',
-    appointed_as: props.employee?.position?.name ?? '',
-    position_snapshot: props.employee?.position?.name ?? '',
+    employee_id: props.decree?.employee_id ?? props.employee?.id ?? '',
+    decree_type_id: props.decree?.decree_type_id ?? '',
+    work_unit_id: props.decree?.work_unit_id ?? props.employee?.work_unit_id ?? '',
+    academic_year: props.decree?.academic_year
+        ?? `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+    issued_date: props.decree?.issued_date ?? new Date().toISOString().slice(0, 10),
+    issued_date_hijri: props.decree?.issued_date_hijri ?? '',
+    effective_date: props.decree?.effective_date ?? '',
+    issued_place: props.decree?.issued_place ?? '',
+    appointed_as: props.decree?.appointed_as ?? props.employee?.position?.name ?? '',
+    position_snapshot: props.decree?.position_snapshot ?? props.employee?.position?.name ?? '',
 });
+
+const hijriLoading = ref(false);
+
+// Tanggal penetapan berubah → usulkan tanggal Hijriah dari kalender MABIMS.
+// Operator tetap bebas menimpanya. Saat menyunting, nilai tersimpan tidak
+// ditimpa otomatis — hanya dihitung ulang bila tanggalnya memang diubah.
+watch(() => form.issued_date, async (date) => {
+    hijriLoading.value = true;
+
+    try {
+        form.issued_date_hijri = await hijriFromGregorian(date);
+    } finally {
+        hijriLoading.value = false;
+    }
+}, { immediate: !isEdit.value });
 
 // pilih GTK → isi satker & jabatan otomatis
 watch(() => form.employee_id, (id) => {
@@ -107,7 +139,21 @@ watch(() => form.employee_id, (id) => {
 });
 
 function submit() {
+    if (isEdit.value) {
+        form.put(route('admin.decrees.update', props.decree.id));
+
+        return;
+    }
+
     form.post(route('admin.decrees.store'));
+}
+
+function destroy() {
+    if (! window.confirm('Hapus draft SK ini? Tindakan ini tidak dapat dibatalkan.')) {
+        return;
+    }
+
+    router.delete(route('admin.decrees.destroy', props.decree.id));
 }
 
 function back() {

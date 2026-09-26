@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\DeletesMasterData;
 use App\Http\Controllers\Controller;
 use App\Models\DecreeType;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,8 @@ use Inertia\Response;
 
 class DecreeTypeController extends Controller
 {
+    use DeletesMasterData;
+
     public function index(): Response
     {
         $this->authorize('viewAny', DecreeType::class);
@@ -84,5 +87,12 @@ class DecreeTypeController extends Controller
         $values = array_values(array_filter(array_map('trim', explode("\n", (string) $lines))));
 
         return $values ?: null;
+    }
+
+    public function destroy(DecreeType $decreeType): RedirectResponse
+    {
+        $this->authorize('delete', $decreeType);
+
+        return $this->deleteMasterData($decreeType, 'Jenis SK');
     }
 }

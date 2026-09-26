@@ -100,7 +100,7 @@ class DemoSeeder extends Seeder
                 [
                     'name' => $user['name'],
                     'email' => $user['email'],
-                    'password' => Hash::make('Qomarul123!'),
+                    'password' => Hash::make('lalisandine'),
                     'role' => $user['role']->value,
                     'work_unit_id' => $user['work_unit_id'] ?? null,
                     'employee_id' => $user['employee_id'] ?? null,

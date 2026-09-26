@@ -29,9 +29,11 @@
                             </span>
                             <span v-else>{{ formatValue(item, column) }}</span>
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
                             <button type="button" @click="openEdit(item)"
                                     class="text-primary-600 hover:underline">{{ t('common.edit') }}</button>
+                            <button type="button" @click="destroy(item)"
+                                    class="ml-3 text-red-600 hover:underline">{{ t('common.delete') }}</button>
                         </td>
                     </tr>
                     <tr v-if="!items.data.length">
@@ -134,6 +136,14 @@ function openEdit(item) {
 
 function close() {
     modalOpen.value = false;
+}
+
+function destroy(item) {
+    if (! window.confirm(t('common.confirm_delete'))) {
+        return;
+    }
+
+    router.delete(`/admin/${props.routeBase}/${item.id}`, { preserveScroll: true });
 }
 
 function save() {

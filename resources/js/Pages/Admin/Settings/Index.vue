@@ -11,14 +11,27 @@
             <section v-for="group in groups" :key="group.key" class="card p-6">
                 <h3 class="mb-4 text-sm font-semibold text-gray-700">{{ group.title }}</h3>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div v-for="field in group.fields" :key="field.key" :class="{ 'sm:col-span-2': field.full }">
+                    <div v-for="field in group.fields" :key="field.name" :class="{ 'sm:col-span-2': field.full }">
                         <label class="label">{{ field.label }}</label>
-                        <textarea v-if="field.type === 'textarea'" v-model="form[field.key]" rows="2"
+                        <textarea v-if="field.type === 'textarea'" v-model="form[group.key][field.name]" rows="2"
                                   class="input"></textarea>
-                        <input v-else v-model="form[field.key]" :type="field.type ?? 'text'"
+                        <input v-else v-model="form[group.key][field.name]" :type="field.type ?? 'text'"
                                class="input">
-                        <p v-if="form.errors[field.key]" class="error-text" role="alert">{{ form.errors[field.key] }}</p>
+                        <p v-if="fieldError(group.key, field.name)" class="error-text" role="alert">{{ fieldError(group.key, field.name) }}</p>
                     </div>
+                </div>
+
+                <!-- Pratinjau langsung format NIGY memakai contoh data GTK. -->
+                <div v-if="group.key === 'nigy' && hasNigyTokens" class="mt-5 rounded-md border border-gray-200 bg-gray-50 p-4">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Pratinjau NIGY</p>
+                    <p class="mt-1 break-all font-mono text-lg font-semibold text-gray-800">{{ nigyPreview || '—' }}</p>
+                    <p class="mt-2 text-xs text-gray-500">
+                        Contoh: lahir 8 Juli 2001 · TMT 24 Juni 2020 · satker SD1 (SD) ·
+                        tipe Kontrak (02) · urut {{ sampleSequence }}
+                    </p>
+                    <p v-if="unknownNigyTokens.length" class="mt-2 text-xs font-medium text-red-600" role="alert">
+                        Token tidak dikenal: {{ unknownNigyTokens.join(', ') }} — penyimpanan akan ditolak.
+                    </p>
                 </div>
             </section>
 
@@ -76,14 +89,81 @@ import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 
-const props = defineProps(['settings', 'schema']);
+const props = defineProps(['settings', 'schema', 'nigyTokens']);
 
-const form = useForm({});
+/**
+ * Struktur form WAJIB bersarang sejak form dibuat.
+ *
+ * `useForm().data()` hanya mengumpulkan kunci yang ada di `defaults` saat form
+ * dibuat (`Object.keys(defaults)`), sehingga `useForm({})` yang diisi kunci
+ * belakangan selalu mengirim payload kosong — server lalu melaporkan semua
+ * field wajib "kosong" meski UI terisi.
+ */
+function initialData() {
+    const data = {};
 
-Object.entries(props.settings).forEach(([group, values]) => {
-    Object.entries(values).forEach(([key, value]) => {
-        form[`${group}.${key}`] = Array.isArray(value) ? value.join('\n') : (value ?? '');
+    Object.entries(props.settings ?? {}).forEach(([group, values]) => {
+        data[group] = {};
+
+        Object.entries(values).forEach(([key, value]) => {
+            data[group][key] = Array.isArray(value) ? value.join('\n') : (value ?? '');
+        });
     });
+
+    return data;
+}
+
+const form = useForm(initialData());
+
+/**
+ * Pratinjau NIGY dihitung di sisi klien supaya berubah seketika saat format
+ * atau padding disunting. Daftar token tetap diambil dari server
+ * (`NigyGenerator::TOKENS`) agar peringatan token asing tidak melenceng.
+ *
+ * Nilai contoh sengaja tetap: satu GTK dengan data lengkap.
+ */
+const NIGY_SAMPLE = {
+    '{tahun_masuk}': '2020',
+    '{bulan_masuk}': '06',
+    '{kode_satker}': 'SD1',
+    '{kode_jenjang}': 'SD',
+    '{tahun_lahir}': '2001',
+    '{bulan_lahir}': '07',
+    '{hari_lahir}': '08',
+    '{tanggal_lahir_tahun}': '2001',
+    '{tanggal_lahir_bulan}': '07',
+    '{tanggal_lahir_hari}': '08',
+    '{tipe_kepegawaian}': '02',
+    '{kode_tipe_kepegawaian}': 'KONTRAK',
+};
+
+const SAMPLE_SEQUENCE = 10;
+
+const hasNigyTokens = computed(() => (props.nigyTokens ?? []).length > 0);
+
+const sampleSequence = computed(() => {
+    const padding = Math.min(Math.max(Number(form?.nigy?.padding) || 1, 1), 10);
+
+    return String(SAMPLE_SEQUENCE).padStart(padding, '0');
+});
+
+const nigyPreview = computed(() => {
+    const format = String(form?.nigy?.format ?? '');
+
+    const replacements = { ...NIGY_SAMPLE, '{urut}': sampleSequence.value };
+
+    return format.replace(/\{[a-z_]+\}/g, (token) => replacements[token] ?? token);
+});
+
+const unknownNigyTokens = computed(() => {
+    if (! hasNigyTokens.value) {
+        return [];
+    }
+
+    const known = new Set(props.nigyTokens);
+    const found = String(form?.nigy?.format ?? '').match(/\{[a-z_]+\}/g) ?? [];
+
+    return [...new Set(found)].filter((token) => ! known.has(token));
 });
 
 const groups = computed(() => [
@@ -91,42 +171,71 @@ const groups = computed(() => [
         key: 'foundation',
         title: 'Identitas Yayasan',
         fields: [
-            { key: 'foundation.name', label: 'Nama Yayasan' },
-            { key: 'foundation.address', label: 'Alamat' },
-            { key: 'foundation.notary_deed', label: 'Akta Notaris' },
-            { key: 'foundation.sk_menkumham', label: 'Nomor SK Menkumham' },
-            { key: 'foundation.chairman_name', label: 'Nama Ketua Yayasan' },
-            { key: 'foundation.chairman_position', label: 'Jabatan Penanda Tangan' },
-            { key: 'foundation.default_issued_place', label: 'Tempat Penetapan Default' },
+            { name: 'name', label: 'Nama Yayasan' },
+            { name: 'address', label: 'Alamat' },
+            { name: 'notary_deed', label: 'Akta Notaris' },
+            { name: 'sk_menkumham', label: 'Nomor SK Menkumham' },
+            { name: 'chairman_name', label: 'Nama Ketua Yayasan' },
+            { name: 'chairman_position', label: 'Jabatan Penanda Tangan' },
+            { name: 'default_issued_place', label: 'Tempat Penetapan Default' },
         ],
     },
     {
         key: 'letterhead',
         title: 'Kop Surat & Tembusan',
         fields: [
-            { key: 'letterhead.cc_list', label: 'Daftar Tembusan Default (satu per baris, gunakan {satker} untuk nama satuan kerja)', type: 'textarea', full: true },
+            { name: 'cc_list', label: 'Daftar Tembusan Default (satu per baris, gunakan {satker} untuk nama satuan kerja)', type: 'textarea', full: true },
         ],
     },
     {
         key: 'nigy',
         title: 'Format NIGY',
         fields: [
-            { key: 'nigy.format', label: 'Format (token: {tahun_masuk} {bulan_masuk} {kode_satker} {kode_jenjang} {urut})' },
-            { key: 'nigy.padding', label: 'Panjang Padding Nomor Urut' },
+            { name: 'format', label: 'Format — token: {tahun_masuk} {bulan_masuk} {kode_satker} {kode_jenjang} {urut} {tahun_lahir} {bulan_lahir} {hari_lahir} {tipe_kepegawaian} {kode_tipe_kepegawaian}' },
+            { name: 'padding', label: 'Panjang Padding Nomor Urut' },
         ],
     },
 ]);
 
-function save() {
-    const payload = { ...form.data() };
+// Error dari server berkunci datar ("foundation.name"), bukan bersarang.
+function fieldError(group, field) {
+    return form.errors[`${group}.${field}`];
+}
 
-    Object.entries(payload).forEach(([key, value]) => {
-        if (typeof value === 'string' && value.includes('\n')) {
-            payload[key] = value.split('\n').map((line) => line.trim()).filter(Boolean);
-        }
+// Field yang divalidasi server sebagai `array` (mis. `letterhead.cc_list`).
+// Diturunkan dari skema server agar textarea kosong tetap terkirim sebagai
+// larik kosong, bukan string kosong yang gagal validasi.
+const arrayFields = computed(() => new Set(
+    Object.entries(props.schema ?? {})
+        .filter(([key, field]) => !key.includes('*') && (field.rules ?? []).includes('array'))
+        .map(([key]) => key),
+));
+
+function buildPayload(data) {
+    const payload = {};
+
+    Object.entries(data).forEach(([group, values]) => {
+        payload[group] = { ...values };
     });
 
-    form.post('/admin/settings', { ...payload, preserveScroll: true, forceFormData: true });
+    arrayFields.value.forEach((path) => {
+        const [group, field] = path.split('.');
+
+        if (! payload[group]) {
+            return;
+        }
+
+        payload[group][field] = String(payload[group][field] ?? '')
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+    });
+
+    return payload;
+}
+
+function save() {
+    form.transform(buildPayload).post('/admin/settings', { preserveScroll: true });
 }
 
 const signatureForm = useForm({ current_password: '', file: null });
