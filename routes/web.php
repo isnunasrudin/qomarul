@@ -154,6 +154,10 @@ Route::middleware('auth')->group(function () {
             Route::resource('additional-duties', AdditionalDutyController::class)->except(['create', 'edit', 'show']);
             Route::resource('decree-types', DecreeTypeController::class)->except(['create', 'edit', 'show']);
             Route::resource('users', UserController::class)->except(['create', 'edit', 'show']);
+            // Impor pengguna dari Excel — diletakkan sebelum rute {user} agar tidak tertukar.
+            Route::get('users/import/template', [UserController::class, 'importTemplate'])->name('users.import.template');
+            Route::post('users/import/preview', [UserController::class, 'importPreview'])->name('users.import.preview');
+            Route::post('users/import', [UserController::class, 'importStore'])->name('users.import');
             Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
             Route::post('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
             Route::post('users/{user}/toggle-2fa', [UserController::class, 'toggleTwoFactor'])->name('users.toggle-2fa');

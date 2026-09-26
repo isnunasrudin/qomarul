@@ -4,10 +4,19 @@
 
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-800">Pengguna</h2>
-            <button type="button" @click="openCreate"
-                    class="btn-primary">
-                Buat Pengguna
-            </button>
+            <div v-if="can.create" class="flex flex-wrap items-center gap-2">
+                <a :href="route('admin.users.import.template')" class="btn-secondary">
+                    Unduh Template
+                </a>
+                <button type="button" @click="openImport"
+                        class="rounded-md border border-primary-200 px-3 py-2 text-sm text-primary-600 hover:bg-primary-50">
+                    Impor Excel
+                </button>
+                <button type="button" @click="openCreate"
+                        class="btn-primary">
+                    Buat Pengguna
+                </button>
+            </div>
         </div>
 
         <div class="table-wrap">
@@ -138,15 +147,53 @@
                 </form>
             </div>
         </div>
+
+        <div v-if="importModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="importModal = false">
+            <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto card p-6">
+                <h3 class="mb-2 text-base font-semibold text-gray-800">Impor Pengguna dari Excel</h3>
+                <p class="mb-4 text-sm text-gray-500">
+                    Unduh <a :href="route('admin.users.import.template')" class="text-primary-600 hover:underline">template impor</a>,
+                    isi, lalu unggah. Berkas divalidasi baris per baris dan ditampilkan sebagai pratinjau
+                    sebelum ada data yang disimpan.
+                </p>
+
+                <ul class="mb-4 list-disc space-y-1 rounded-md bg-gray-50 p-3 pl-6 text-xs text-gray-600">
+                    <li><b>nama</b>, <b>username</b>, <b>email</b>, <b>peran</b> wajib diisi.</li>
+                    <li><b>kode_satker</b> wajib untuk peran <code>unit_admin</code>.</li>
+                    <li><b>nigy</b> wajib untuk peran <code>employee</code> (menautkan ke GTK).</li>
+                    <li><b>kata_sandi</b> boleh kosong — sistem membuat sandi acak dan menampilkannya setelah impor.</li>
+                    <li><b>aktif</b> boleh kosong — berarti ya.</li>
+                </ul>
+
+                <form @submit.prevent="submitImport" class="space-y-4">
+                    <div>
+                        <label class="label">Berkas Excel (.xlsx, .xls, .csv — maks 2 MB)</label>
+                        <input type="file" accept=".xlsx,.xls,.csv"
+                               @change="(e) => { importForm.file = e.target.files[0]; }"
+                               class="mt-1 block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-600 hover:file:bg-primary-100">
+                        <p v-if="importForm.errors.file" class="error-text" role="alert">{{ importForm.errors.file }}</p>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" @click="importModal = false" class="btn-secondary">Batal</button>
+                        <button type="submit" :disabled="importForm.processing"
+                                class="rounded-md bg-primary-600 px-4 py-2 text-sm text-white hover:bg-primary-700 disabled:opacity-50">
+                            Pratinjau
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </AdminLayout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { inject, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AdminLayout from '../../../Layouts/AdminLayout.vue';
 
-defineProps(['users', 'roles', 'workUnits']);
+const route = inject('route');
+
+defineProps(['users', 'roles', 'workUnits', 'can']);
 
 const roleLabels = {
     foundation_head: 'Ketua Yayasan',
@@ -160,10 +207,22 @@ function roleLabel(role) {
 }
 
 const modal = ref(null);
+const importModal = ref(false);
+const importForm = useForm({ file: null });
 const form = useForm({
     name: '', username: '', email: '', password: '', password_confirmation: '',
     role: 'employee', work_unit_id: null, must_change_password: true,
 });
+
+function openImport() {
+    importForm.clearErrors();
+    importForm.file = null;
+    importModal.value = true;
+}
+
+function submitImport() {
+    importForm.post(route('admin.users.import.preview'), { onSuccess: () => { importModal.value = false; } });
+}
 
 function openCreate() {
     form.reset();
